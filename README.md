@@ -84,9 +84,11 @@ The service supports the following health checks:
 - **SSL**: Checks the validity and expiry of SSL certificates.
 - **WSS**: Validates WebSocket Secure endpoints by sending and receiving JSON-RPC requests.
 
-## License
+## Licensing
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+- **GeoLite2 Data**: The GeoLite2 data created by MaxMind is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0).
+When using this data, you must comply with its licensing terms. Download the GeoLite2 database from [MaxMind](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data/).
+- **Project License**: The code for this project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Acknowledgements
 
