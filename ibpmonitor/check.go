@@ -5,36 +5,23 @@ import (
 )
 
 var (
-	checks = make(map[string]Check)
+	checks = make(map[string]CheckFunc)
 )
 
-func RegisterCheck(name string, check Check) {
+func RegisterCheck(name string, check CheckFunc) {
 	resultTypesMutex.Lock()
 	defer resultTypesMutex.Unlock()
 	checks[name] = check
 }
 
-func GetCheck(name string) (Check, bool) {
+func GetCheck(name string) (CheckFunc, bool) {
 	resultTypesMutex.Lock()
 	defer resultTypesMutex.Unlock()
 	check, exists := checks[name]
 	return check, exists
 }
 
-func (r *RpcHealth) isCheckEnabled(name string) bool {
-	if len(r.options.EnabledChecks) == 0 {
-		// If no specific checks are enabled, all checks are considered enabled
-		return true
-	}
-	for _, enabledCheck := range r.options.EnabledChecks {
-		if enabledCheck == name {
-			return true
-		}
-	}
-	return false
-}
-
-func (r *RpcHealth) performChecks() {
+func (r *IbpMonitor) performCheck(checkName string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -44,18 +31,9 @@ func (r *RpcHealth) performChecks() {
 	}
 
 	for _, member := range r.Members {
-		for name, check := range checks {
-			if r.isCheckEnabled(name) {
-				if member.IPv4Address != "" {
-					go check(RpcServer{Name: member.MemberName, RpcUrl: "", Options: RpcServerOptions{IpAddress: member.IPv4Address}}, r.options, r.ResultsCollectorChannel)
-					time.Sleep(100 * time.Millisecond)
-				}
-
-				if member.IPv6Address != "" {
-					go check(RpcServer{Name: member.MemberName, RpcUrl: "", Options: RpcServerOptions{IpAddress: member.IPv6Address}}, r.options, r.ResultsCollectorChannel)
-					time.Sleep(100 * time.Millisecond)
-				}
-			}
+		if checkFunc, exists := checks[checkName]; exists {
+			go CheckWrapper(checkName, checkFunc, member, r.Config.Checks[checkName], r.ResultsCollectorChannel)
+			time.Sleep(100 * time.Microsecond)
 		}
 	}
 }

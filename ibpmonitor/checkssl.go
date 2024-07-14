@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"ibp-geodns/config"
 	"net/url"
 	"strings"
 	"time"
@@ -19,36 +20,36 @@ type SslResult struct {
 	Error           string
 }
 
-func SslCheck(server RpcServer, options Options, resultsCollectorChannel chan string) {
+func SslCheck(member Member, config config.CheckConfig, resultsCollectorChannel chan string) {
 	checkName := "ssl"
 	done := make(chan SslResult, 2)
-	timer := time.NewTimer(options.Timeout)
+	timer := time.NewTimer(time.Duration(config.Timeout))
 
 	go func() {
 		// Recover from any fatal errors in the check.
 		defer func() {
 			if r := recover(); r != nil {
 				err := fmt.Sprintf("Ssl check failed: %v", r)
-				done <- SslResult{CheckName: checkName, ServerName: server.Name, Success: false, Error: err}
+				done <- SslResult{CheckName: checkName, ServerName: member.MemberName, Success: false, Error: err}
 			}
 			close(done)
 		}()
 
-		u, err := url.Parse(server.RpcUrl)
+		u, err := url.Parse(member.IPv4Address)
 		if err != nil {
 			err := fmt.Sprintf("Unable to parse wss endpoint: %v", err)
-			done <- SslResult{CheckName: checkName, ServerName: server.Name, Success: false, Error: err}
+			done <- SslResult{CheckName: checkName, ServerName: member.MemberName, Success: false, Error: err}
 			return
 		}
 		hostname := u.Hostname()
 
-		conn, err := tls.Dial("tcp", server.Options.IpAddress+":443", &tls.Config{
+		conn, err := tls.Dial("tcp", member.IPv4Address+":443", &tls.Config{
 			ServerName:         hostname,
 			InsecureSkipVerify: true,
 		})
 		if err != nil {
 			err := fmt.Sprintf("Failed to connect to endpoint: %v", err)
-			done <- SslResult{CheckName: checkName, ServerName: server.Name, Success: false, Error: err}
+			done <- SslResult{CheckName: checkName, ServerName: member.MemberName, Success: false, Error: err}
 			return
 		}
 		defer conn.Close()
@@ -86,7 +87,7 @@ func SslCheck(server RpcServer, options Options, resultsCollectorChannel chan st
 
 		result := SslResult{
 			CheckName:       checkName,
-			ServerName:      server.Name,
+			ServerName:      member.MemberName,
 			Success:         success,
 			ExpiryTimestamp: expiryTimestamp,
 			DaysUntilExpiry: daysUntilExpiry,
@@ -100,8 +101,8 @@ func SslCheck(server RpcServer, options Options, resultsCollectorChannel chan st
 		resultJSON, _ := json.Marshal(result)
 		resultsCollectorChannel <- string(resultJSON)
 	case <-timer.C:
-		err := fmt.Sprintf("sslCheck for %s timed out", server.Name)
-		resultJSON, _ := json.Marshal(SslResult{CheckName: checkName, ServerName: server.Name, Success: false, Error: err})
+		err := fmt.Sprintf("sslCheck for %s timed out", member.MemberName)
+		resultJSON, _ := json.Marshal(SslResult{CheckName: checkName, ServerName: member.MemberName, Success: false, Error: err})
 		resultsCollectorChannel <- string(resultJSON)
 	}
 }

@@ -1,8 +1,8 @@
 package ibpmonitor
 
 import (
+	"ibp-geodns/config"
 	"sync"
-	"time"
 )
 
 type RpcServerOptions struct {
@@ -17,26 +17,19 @@ type RpcServer struct {
 	Options RpcServerOptions
 }
 
-type Check func(rpcServer RpcServer, options Options, resultsCollectorChannel chan string)
-
-type Options struct {
-	CheckInterval time.Duration
-	Timeout       time.Duration
-	Continuous    bool
-	EnabledChecks []string
-}
+type CheckFunc func(member Member, options config.CheckConfig, resultsCollectorChannel chan string)
 
 type NodeResults struct {
 	mu     sync.Mutex
 	Checks map[string]interface{}
 }
 
-type RpcHealth struct {
+type IbpMonitor struct {
 	mu                      sync.Mutex
 	Members                 []Member
 	HealthStatus            map[string]bool
 	StopChannel             chan struct{}
-	options                 Options
+	Config                  *config.Config
 	ResultsChannel          chan string
 	ResultsCollectorChannel chan string
 	NodeResults             map[string]*NodeResults

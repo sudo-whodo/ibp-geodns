@@ -25,7 +25,7 @@ func GetResultType(name string) (interface{}, bool) {
 	return resultType, exists
 }
 
-func (r *RpcHealth) MonitorResults() {
+func (r *IbpMonitor) MonitorResults() {
 	for {
 		select {
 		case result := <-r.ResultsCollectorChannel:
@@ -43,7 +43,7 @@ func (r *RpcHealth) MonitorResults() {
 	}
 }
 
-func (r *RpcHealth) processResult(resultJSON string) {
+func (r *IbpMonitor) processResult(resultJSON string) {
 	var tempResult map[string]interface{}
 	if err := json.Unmarshal([]byte(resultJSON), &tempResult); err != nil {
 		log.Printf("Error unmarshalling result: %v", err)
@@ -75,7 +75,7 @@ func (r *RpcHealth) processResult(resultJSON string) {
 	nodeResults.Checks[checkName] = tempResult
 }
 
-func (r *RpcHealth) sendBatchedResults() string {
+func (r *IbpMonitor) sendBatchedResults() string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -106,15 +106,13 @@ func (r *RpcHealth) sendBatchedResults() string {
 	return string(resultsJSON)
 }
 
-func (r *RpcHealth) allChecksComplete() bool {
+func (r *IbpMonitor) allChecksComplete() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	var checksToValidate []string
-	if len(r.options.EnabledChecks) > 0 {
-		checksToValidate = r.options.EnabledChecks
-	} else {
-		for checkName := range checks {
+	for checkName, checkConfig := range r.Config.Checks {
+		if checkConfig.Enabled == 1 {
 			checksToValidate = append(checksToValidate, checkName)
 		}
 	}

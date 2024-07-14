@@ -1,12 +1,12 @@
 package ibpmonitor
 
-func (r *RpcHealth) AddMember(newMember Member) {
+func (r *IbpMonitor) AddMember(newMember Member) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.Members = append(r.Members, newMember)
 }
 
-func (r *RpcHealth) RemoveMember(name string) {
+func (r *IbpMonitor) RemoveMember(name string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i, member := range r.Members {

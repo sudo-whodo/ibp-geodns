@@ -14,6 +14,8 @@ func updateMemberStatus() {
 			continue
 		}
 
+		logResults(status)
+
 		mu.Lock()
 		for memberName, success := range status {
 			for i, config := range powerDNSConfigs {
@@ -24,5 +26,12 @@ func updateMemberStatus() {
 			}
 		}
 		mu.Unlock()
+	}
+}
+
+func logResults(status map[string]bool) {
+	log.Println("Received member status update:")
+	for memberName, success := range status {
+		log.Printf("Member: %s, Online: %t\n", memberName, success)
 	}
 }

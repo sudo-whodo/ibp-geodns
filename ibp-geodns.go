@@ -5,21 +5,14 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
+	"ibp-geodns/config"
 	"ibp-geodns/ibpconfig"
 	"ibp-geodns/ibpmonitor"
 	"ibp-geodns/powerdns"
 )
 
-type Config struct {
-	GeoliteDBPath      string `json:"GeoliteDBPath"`
-	StaticDNSConfigUrl string `json:"StaticDNSConfigUrl"`
-	MembersConfigUrl   string `json:"MembersConfigUrl"`
-	ServicesConfigUrl  string `json:"ServicesConfigUrl"`
-}
-
-func loadConfig(filename string) (*Config, error) {
+func loadConfig(filename string) (*config.Config, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -27,7 +20,7 @@ func loadConfig(filename string) (*Config, error) {
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
-	config := &Config{}
+	config := &config.Config{}
 	err = decoder.Decode(config)
 	if err != nil {
 		return nil, err
@@ -107,12 +100,7 @@ func main() {
 	log.Println("IBP Monitor configuration populated")
 
 	// Setup IBP Monitor Health Checker
-	options := ibpmonitor.Options{
-		CheckInterval: 30 * time.Second,
-		Timeout:       5 * time.Second,
-		EnabledChecks: []string{"ping"},
-	}
-	healthChecker := ibpmonitor.NewRpcHealth(ibpMonitorConfigs, options)
+	healthChecker := ibpmonitor.NewIbpMonitor(ibpMonitorConfigs, config)
 	resultsChannel := healthChecker.Start()
 
 	log.Println("Waiting for initial results to launch powerdns...")

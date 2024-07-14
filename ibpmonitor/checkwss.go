@@ -3,6 +3,7 @@ package ibpmonitor
 import (
 	"crypto/tls"
 	"encoding/json"
+	"ibp-geodns/config"
 	"log"
 	"net"
 	"net/url"
@@ -26,8 +27,8 @@ type JSONRPCRequest struct {
 	ID      int           `json:"id"`
 }
 
-func WssCheck(server RpcServer, options Options, resultsCollectorChannel chan string) {
-	u, err := url.Parse(server.RpcUrl)
+func WssCheck(member Member, config config.CheckConfig, resultsCollectorChannel chan string) {
+	u, err := url.Parse(member.IPv4Address)
 	if err != nil {
 		log.Printf("Failed to parse WSS endpoint: %v\n", err)
 	}
@@ -37,7 +38,7 @@ func WssCheck(server RpcServer, options Options, resultsCollectorChannel chan st
 			ServerName: u.Hostname(),
 		},
 		NetDial: func(network, addr string) (net.Conn, error) {
-			return net.Dial(network, server.Options.IpAddress+":443")
+			return net.Dial(network, member.IPv4Address+":443")
 		},
 	}
 
