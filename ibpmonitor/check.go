@@ -48,11 +48,12 @@ func (r *RpcHealth) performChecks() {
 			if r.isCheckEnabled(name) {
 				if member.IPv4Address != "" {
 					go check(RpcServer{Name: member.MemberName, RpcUrl: "", Options: RpcServerOptions{IpAddress: member.IPv4Address}}, r.options, r.ResultsCollectorChannel)
-					time.Sleep(100 * time.Millisecond) // Small delay to prevent overloading
+					time.Sleep(100 * time.Millisecond)
 				}
+
 				if member.IPv6Address != "" {
 					go check(RpcServer{Name: member.MemberName, RpcUrl: "", Options: RpcServerOptions{IpAddress: member.IPv6Address}}, r.options, r.ResultsCollectorChannel)
-					time.Sleep(100 * time.Millisecond) // Small delay to prevent overloading
+					time.Sleep(100 * time.Millisecond)
 				}
 			}
 		}

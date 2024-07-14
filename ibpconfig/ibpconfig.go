@@ -9,14 +9,11 @@ import (
 	"strings"
 )
 
-const (
-	membersURL  = "https://raw.githubusercontent.com/ibp-network/config/main/members_professional.json"
-	servicesURL = "https://raw.githubusercontent.com/ibp-network/config/main/services_rpc.json"
-)
-
 var (
-	Members  map[string]Member
-	Services map[string]Service
+	MembersURL  string
+	ServicesURL string
+	Members     map[string]Member
+	Services    map[string]Service
 )
 
 func fetchAndValidateJSON(url string, target interface{}) error {
@@ -46,7 +43,7 @@ func updateConfigurations(done chan bool) {
 	log.Println("Fetching and updating configurations...")
 
 	var newMembers map[string]Member
-	if err := fetchAndValidateJSON(membersURL, &newMembers); err != nil {
+	if err := fetchAndValidateJSON(MembersURL, &newMembers); err != nil {
 		log.Printf("Error fetching members configuration: %v", err)
 	} else {
 		Members = newMembers
@@ -54,7 +51,7 @@ func updateConfigurations(done chan bool) {
 	}
 
 	var newServices map[string]Service
-	if err := fetchAndValidateJSON(servicesURL, &newServices); err != nil {
+	if err := fetchAndValidateJSON(ServicesURL, &newServices); err != nil {
 		log.Printf("Error fetching services configuration: %v", err)
 	} else {
 		Services = newServices
@@ -154,6 +151,8 @@ func appendUniqueString(slice []string, item string) []string {
 	return append(slice, item)
 }
 
-func Init(done chan bool) {
+func Init(done chan bool, membersURL, servicesURL string) {
+	MembersURL = membersURL
+	ServicesURL = servicesURL
 	go updateConfigurations(done)
 }

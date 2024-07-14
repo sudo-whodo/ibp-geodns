@@ -18,12 +18,12 @@ var (
 func Init(configs []DNS, resultsCh chan string, initialResults map[string]bool, geoIPDBPath string, staticEntriesURL string) {
 	err := InitGeoIP(geoIPDBPath)
 	if err != nil {
-		log.Fatalf("Failed to initialize GeoIP database: %v", err)
+		log.Printf("Failed to initialize GeoIP database: %v", err)
 	}
 
 	err = loadStaticEntries(staticEntriesURL)
 	if err != nil {
-		log.Fatalf("Failed to load static entries: %v", err)
+		log.Printf("Failed to load static entries: %v", err)
 	}
 
 	go startStaticEntriesUpdater(staticEntriesURL)
@@ -61,5 +61,5 @@ func Init(configs []DNS, resultsCh chan string, initialResults map[string]bool, 
 
 	http.HandleFunc("/dns", dnsHandler)
 	log.Println("Starting PowerDNS server on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	go http.ListenAndServe(":8080", nil)
 }

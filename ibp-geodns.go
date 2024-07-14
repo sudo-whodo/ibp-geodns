@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -11,11 +12,40 @@ import (
 	"ibp-geodns/powerdns"
 )
 
+type Config struct {
+	GeoliteDBPath      string `json:"GeoliteDBPath"`
+	StaticDNSConfigUrl string `json:"StaticDNSConfigUrl"`
+	MembersConfigUrl   string `json:"MembersConfigUrl"`
+	ServicesConfigUrl  string `json:"ServicesConfigUrl"`
+}
+
+func loadConfig(filename string) (*Config, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	config := &Config{}
+	err = decoder.Decode(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
 func main() {
 	log.Println("Starting the application...")
 
+	config, err := loadConfig("config.json")
+	if err != nil {
+		log.Printf("Failed to load config: %v", err)
+	}
+
 	done := make(chan bool)
-	ibpconfig.Init(done)
+	ibpconfig.Init(done, config.MembersConfigUrl, config.ServicesConfigUrl)
 
 	// Wait for the initial configuration to be ready
 	log.Println("Waiting for initial configuration to be ready...")
@@ -93,7 +123,7 @@ func main() {
 	initialResults := parseInitialResults(initialResultsJSON)
 
 	// Initialize PowerDNS
-	powerdns.Init(powerDNSConfigs, resultsChannel, initialResults, "GeoLite2-City.mmdb", "https://raw.githubusercontent.com/ibp-network/config/main/geodns-static.json")
+	powerdns.Init(powerDNSConfigs, resultsChannel, initialResults, config.GeoliteDBPath, config.StaticDNSConfigUrl)
 
 	select {} // Run forever
 }
@@ -101,7 +131,7 @@ func main() {
 func parseInitialResults(initialResultsJSON string) map[string]bool {
 	var initialResults map[string]bool
 	if err := json.Unmarshal([]byte(initialResultsJSON), &initialResults); err != nil {
-		log.Fatalf("Error parsing initial results: %v", err)
+		log.Printf("Error parsing initial results: %v", err)
 	}
 
 	flatResults := make(map[string]bool)
