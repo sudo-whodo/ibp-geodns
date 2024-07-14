@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func CheckWrapper(checkName string, checkFunc CheckFunc, member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
+func CheckWrapper(checkName string, checkFunc Check, member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
 	done := make(chan interface{}, 2)
 	timer := time.NewTimer(time.Duration(options.Timeout) * time.Second)
 

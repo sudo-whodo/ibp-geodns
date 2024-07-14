@@ -5,16 +5,16 @@ import (
 )
 
 var (
-	checks = make(map[string]CheckFunc)
+	checks = make(map[string]Check)
 )
 
-func RegisterCheck(name string, check CheckFunc) {
+func RegisterCheck(name string, check Check) {
 	resultTypesMutex.Lock()
 	defer resultTypesMutex.Unlock()
 	checks[name] = check
 }
 
-func GetCheck(name string) (CheckFunc, bool) {
+func GetCheck(name string) (Check, bool) {
 	resultTypesMutex.Lock()
 	defer resultTypesMutex.Unlock()
 	check, exists := checks[name]
@@ -31,8 +31,8 @@ func (r *IbpMonitor) performCheck(checkName string) {
 	}
 
 	for _, member := range r.Members {
-		if checkFunc, exists := checks[checkName]; exists {
-			go CheckWrapper(checkName, checkFunc, member, r.Config.Checks[checkName], r.ResultsCollectorChannel)
+		if check, exists := checks[checkName]; exists {
+			go CheckWrapper(checkName, check, member, r.Config.Checks[checkName], r.ResultsCollectorChannel)
 			time.Sleep(100 * time.Microsecond)
 		}
 	}

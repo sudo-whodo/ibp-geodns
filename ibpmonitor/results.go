@@ -2,6 +2,7 @@ package ibpmonitor
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -26,24 +27,42 @@ func GetResultType(name string) (interface{}, bool) {
 }
 
 func (r *IbpMonitor) MonitorResults() {
+	interval := 100 * time.Millisecond
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	adjustTicker := func(newInterval time.Duration) {
+		interval = newInterval
+		ticker.Stop()
+		ticker = time.NewTicker(interval)
+		// log.Printf("Ticker interval adjusted to %v", interval)
+	}
+
+	log.Println("Starting to monitor results")
 	for {
 		select {
 		case result := <-r.ResultsCollectorChannel:
 			r.processResult(result)
-		case <-time.After(5 * time.Second):
+		case <-ticker.C:
 			if r.allChecksComplete() {
-				jsonResults := r.sendBatchedResults()
-				if jsonResults != "{}" {
+				jsonResults, err := r.sendBatchedResults()
+				if err == nil {
+					// log.Println("Sending batched results to channel")
 					r.ResultsChannel <- jsonResults
+					if interval == 100*time.Millisecond {
+						adjustTicker(30 * time.Second)
+					}
+				} else {
+					// log.Println("Not all checks are complete yet")
 				}
-			} else {
-				log.Println("Not all checks are complete yet")
 			}
 		}
 	}
 }
 
 func (r *IbpMonitor) processResult(resultJSON string) {
+	// log.Printf("Processing result: %s", resultJSON)
+
 	var tempResult map[string]interface{}
 	if err := json.Unmarshal([]byte(resultJSON), &tempResult); err != nil {
 		log.Printf("Error unmarshalling result: %v", err)
@@ -62,20 +81,26 @@ func (r *IbpMonitor) processResult(resultJSON string) {
 		return
 	}
 
+	// log.Printf("Result for server %s, check %s", serverName, checkName)
+
 	r.mu.Lock()
 	nodeResults, exists := r.NodeResults[serverName]
 	if !exists {
+		// log.Printf("Node results for server %s do not exist, creating new entry", serverName)
 		nodeResults = &NodeResults{Checks: make(map[string]interface{})}
 		r.NodeResults[serverName] = nodeResults
+	} else {
+		// log.Printf("Node results for server %s found", serverName)
 	}
 	r.mu.Unlock()
 
 	nodeResults.mu.Lock()
 	defer nodeResults.mu.Unlock()
 	nodeResults.Checks[checkName] = tempResult
+	// log.Printf("Check %s result updated for server %s", checkName, serverName)
 }
 
-func (r *IbpMonitor) sendBatchedResults() string {
+func (r *IbpMonitor) sendBatchedResults() (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -95,15 +120,23 @@ func (r *IbpMonitor) sendBatchedResults() string {
 			}
 		}
 		results[serverName] = online
+		log.Printf("Server %s, Online: %t", serverName, online)
 	}
 
 	resultsJSON, err := json.Marshal(results)
 	if err != nil {
 		log.Printf("Error marshalling batched results: %v", err)
-		return ""
+		return "", err
 	}
 
-	return string(resultsJSON)
+	resultsString := string(resultsJSON)
+	if resultsString == "{}" || resultsString == "" {
+		// log.Println("Batched results are empty")
+		return "", fmt.Errorf("JSON results are empty")
+	}
+
+	// log.Printf("Batched results: %s", resultsJSON)
+	return string(resultsJSON), err
 }
 
 func (r *IbpMonitor) allChecksComplete() bool {
@@ -120,10 +153,11 @@ func (r *IbpMonitor) allChecksComplete() bool {
 	for serverName, nodeResults := range r.NodeResults {
 		for _, checkName := range checksToValidate {
 			if _, exists := nodeResults.Checks[checkName]; !exists {
-				log.Printf("Check %s not complete for server %s", checkName, serverName) // Log incomplete check
+				log.Printf("Check %s not complete for server %s", checkName, serverName)
 				return false
 			}
 		}
 	}
+
 	return true
 }

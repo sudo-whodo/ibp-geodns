@@ -28,6 +28,9 @@ func (r *IbpMonitor) LaunchChecks() {
 			wg.Add(1)
 			go func(checkName string, checkConfig config.CheckConfig) {
 				defer wg.Done()
+
+				r.performCheck(checkName)
+
 				ticker := time.NewTicker(time.Duration(checkConfig.CheckInterval) * time.Second)
 				defer ticker.Stop()
 

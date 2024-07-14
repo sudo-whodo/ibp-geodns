@@ -17,7 +17,7 @@ type RpcServer struct {
 	Options RpcServerOptions
 }
 
-type CheckFunc func(member Member, options config.CheckConfig, resultsCollectorChannel chan string)
+type Check func(member Member, options config.CheckConfig, resultsCollectorChannel chan string)
 
 type NodeResults struct {
 	mu     sync.Mutex
@@ -33,6 +33,7 @@ type IbpMonitor struct {
 	ResultsChannel          chan string
 	ResultsCollectorChannel chan string
 	NodeResults             map[string]*NodeResults
+	InitialResultsProcessed bool
 }
 
 type Service struct {

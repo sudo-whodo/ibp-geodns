@@ -2,6 +2,22 @@
     "GeoliteDBPath": "GeoLite2-City.mmdb",
     "StaticDNSConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/geodns-static.json",
     "MembersConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/members_professional.json",
-    "ServicesConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/services_rpc.json"
+    "ServicesConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/services_rpc.json",
+    "Checks": {
+        "ping": {
+            "enabled": 1,
+            "timeout": 1,
+            "checkInterval": 30
+        },
+        "ssl": {
+            "enabled": 0,
+            "timeout": 4,
+            "checkInterval": 30
+        },
+        "wss": {
+            "enabled": 0,
+            "timeout": 4,
+            "checkInterval": 30
+        }
+    }
 }
-  
