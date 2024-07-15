@@ -4,18 +4,16 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 )
 
 var (
 	powerDNSConfigs []DNS
 	resultsChannel  chan string
 	staticEntries   map[string][]Record
-	mu              sync.RWMutex
 	topLevelDomains map[string]bool
 )
 
-func Init(configs []DNS, resultsCh chan string, initialResults map[string]bool, geoIPDBPath string, staticEntriesURL string) {
+func Init(configs []DNS, resultsCh chan string, geoIPDBPath string, staticEntriesURL string) {
 	err := InitGeoIP(geoIPDBPath)
 	if err != nil {
 		log.Printf("Failed to initialize GeoIP database: %v", err)
@@ -27,21 +25,6 @@ func Init(configs []DNS, resultsCh chan string, initialResults map[string]bool, 
 	}
 
 	go startStaticEntriesUpdater(staticEntriesURL)
-
-	for i, config := range configs {
-		for memberName := range config.Members {
-			if online, exists := initialResults[memberName]; exists {
-				configs[i].Members[memberName] = Member{
-					MemberName: memberName,
-					IPv4:       config.Members[memberName].IPv4,
-					IPv6:       config.Members[memberName].IPv6,
-					Latitude:   config.Members[memberName].Latitude,
-					Longitude:  config.Members[memberName].Longitude,
-					Online:     online,
-				}
-			}
-		}
-	}
 
 	powerDNSConfigs = configs
 	resultsChannel = resultsCh

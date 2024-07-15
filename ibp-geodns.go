@@ -2,14 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"log"
-	"os"
-	"strings"
-
 	"ibp-geodns/config"
 	"ibp-geodns/ibpconfig"
 	"ibp-geodns/ibpmonitor"
 	"ibp-geodns/powerdns"
+	"log"
+	"os"
+	"strings"
 )
 
 func loadConfig(filename string) (*config.Config, error) {
@@ -40,17 +39,14 @@ func main() {
 	done := make(chan bool)
 	ibpconfig.Init(done, config.MembersConfigUrl, config.ServicesConfigUrl)
 
-	// Wait for the initial configuration to be ready
 	log.Println("Waiting for initial configuration to be ready...")
 	<-done
 	log.Println("Initial configuration is ready")
 
-	// Extract DNS and Endpoints
 	log.Println("Extracting DNS and Endpoints...")
 	endpoints, memberServices, serviceEndpoints := ibpconfig.ExtractData()
 	log.Println("Extraction complete")
 
-	// Populate PowerDNS configuration
 	var powerDNSConfigs []powerdns.DNS
 	for dns, members := range endpoints {
 		dnsConfig := powerdns.DNS{
@@ -72,7 +68,6 @@ func main() {
 	}
 	log.Println("PowerDNS configuration populated")
 
-	// Populate IBP Monitor configuration
 	var ibpMonitorConfigs []ibpmonitor.Member
 	for memberName, service := range memberServices {
 		member := ibpmonitor.Member{
@@ -99,33 +94,10 @@ func main() {
 	}
 	log.Println("IBP Monitor configuration populated")
 
-	// Setup IBP Monitor Health Checker
 	healthChecker := ibpmonitor.NewIbpMonitor(ibpMonitorConfigs, config)
 	resultsChannel := healthChecker.Start()
 
-	log.Println("Waiting for initial results to launch powerdns...")
-	initialResultsJSON := <-resultsChannel
-	log.Printf("Initial results received.")
+	powerdns.Init(powerDNSConfigs, resultsChannel, config.GeoliteDBPath, config.StaticDNSConfigUrl)
 
-	// Parse initial results
-	initialResults := parseInitialResults(initialResultsJSON)
-
-	// Initialize PowerDNS
-	powerdns.Init(powerDNSConfigs, resultsChannel, initialResults, config.GeoliteDBPath, config.StaticDNSConfigUrl)
-
-	select {} // Run forever
-}
-
-func parseInitialResults(initialResultsJSON string) map[string]bool {
-	var initialResults map[string]bool
-	if err := json.Unmarshal([]byte(initialResultsJSON), &initialResults); err != nil {
-		log.Printf("Error parsing initial results: %v", err)
-	}
-
-	flatResults := make(map[string]bool)
-	for memberName, success := range initialResults {
-		flatResults[memberName] = success
-	}
-
-	return flatResults
+	select {}
 }

@@ -5,19 +5,25 @@
     "ServicesConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/services_rpc.json",
     "Checks": {
         "ping": {
-            "enabled": 1,
-            "timeout": 1,
-            "checkInterval": 30
+            "Enabled": 1,
+            "CheckType": "site",
+            "Timeout": 10,
+            "CheckInterval": 30,
+            "ExtraOptions": {"PingCount": 80, "PingInterval": 25, "PingTimeout": 5000, "PingTTL": 64, "PingSize": 24, "MaxPacketLoss": 10, "MaxLatency": 800}
         },
         "ssl": {
-            "enabled": 0,
-            "timeout": 4,
-            "checkInterval": 30
+            "Enabled": 0,
+            "CheckType": "endpoint",
+            "Timeout": 4,
+            "CheckInterval": 600,
+            "ExtraOptions": {}
         },
         "wss": {
-            "enabled": 0,
-            "timeout": 4,
-            "checkInterval": 30
+            "Enabled": 0,
+            "CheckType": "endpoint",
+            "Timeout": 4,
+            "CheckInterval": 120,
+            "ExtraOptions": {}
         }
     }
 }

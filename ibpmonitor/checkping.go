@@ -3,6 +3,7 @@ package ibpmonitor
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"ibp-geodns/config"
@@ -11,31 +12,29 @@ import (
 )
 
 type PingResult struct {
-	CheckName  string
-	ServerName string
-	CheckType  string
-	Success    bool
-	Latency    time.Duration
-	PacketLoss float64
-	Error      string
+	CheckName  string   `json:"checkname"`
+	ServerName string   `json:"servername"`
+	ResultType string   `json:"resulttype"`
+	Success    bool     `json:"success"`
+	Error      string   `json:"error"`
+	Data       PingData `json:"data"`
 }
 
-func getIntOption(extraOptions map[string]interface{}, key string, defaultValue int) int {
-	if value, ok := extraOptions[key].(float64); ok {
-		return int(value)
-	}
-	return defaultValue
+type PingData struct {
+	Latency    time.Duration `json:"latency"`
+	PacketLoss float64       `json:"packetloss"`
 }
 
 func PingCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
 	checkName := "ping"
-	checkType := "site"
 
 	pingCount := getIntOption(options.ExtraOptions, "PingCount", 10)
 	pingInterval := getIntOption(options.ExtraOptions, "PingInterval", 100)
 	pingTimeout := getIntOption(options.ExtraOptions, "PingTimeout", 2000)
 	pingTTL := getIntOption(options.ExtraOptions, "PingTTL", 64)
 	pingSize := getIntOption(options.ExtraOptions, "PingSize", 24)
+	maxPacketLoss := getIntOption(options.ExtraOptions, "MaxPacketLoss", 20)
+	maxLatency := getIntOption(options.ExtraOptions, "MaxLatency", 800)
 
 	pinger, err := ping.NewPinger(member.IPv4Address)
 	if err != nil {
@@ -43,16 +42,14 @@ func PingCheck(member Member, options config.CheckConfig, resultsCollectorChanne
 		result := PingResult{
 			CheckName:  checkName,
 			ServerName: member.MemberName,
-			CheckType:  checkType,
+			ResultType: "site",
 			Success:    false,
-			Latency:    0,
 			Error:      err,
 		}
 
-		// log.Printf("Ping Result: %+v", result)
-
-		resultJSON, _ := json.Marshal(result)
-		resultsCollectorChannel <- string(resultJSON)
+		finalResultJSON, _ := json.Marshal(result)
+		// log.Printf("Generated JSON (error): %s", finalResultJSON)
+		resultsCollectorChannel <- string(finalResultJSON)
 		return
 	}
 
@@ -69,38 +66,39 @@ func PingCheck(member Member, options config.CheckConfig, resultsCollectorChanne
 		result := PingResult{
 			CheckName:  checkName,
 			ServerName: member.MemberName,
-			CheckType:  checkType,
+			ResultType: "site",
 			Success:    false,
-			Latency:    0,
 			Error:      err,
 		}
 
-		// log.Printf("Ping Result: %+v", result)
-
-		resultJSON, _ := json.Marshal(result)
-		resultsCollectorChannel <- string(resultJSON)
+		finalResultJSON, _ := json.Marshal(result)
+		// log.Printf("Generated JSON (error): %s", finalResultJSON)
+		resultsCollectorChannel <- string(finalResultJSON)
 		return
 	}
 
 	stats := pinger.Statistics()
 
-	// log.Printf("Ping Statistics: %+v", stats)
+	success := stats.PacketLoss <= float64(maxPacketLoss) && stats.AvgRtt.Milliseconds() <= int64(maxLatency) && stats.AvgRtt != 0
 
-	success := stats.PacketsRecv == stats.PacketsSent
+	if !success {
+		log.Printf("Member: %s failed ping check - Packet Loss: %v (Max: %v) Latency: %d (Max: %d)", member.MemberName, stats.PacketLoss, float64(maxPacketLoss), stats.AvgRtt.Milliseconds(), int64(maxLatency))
+	}
 
 	result := PingResult{
 		CheckName:  checkName,
 		ServerName: member.MemberName,
-		CheckType:  checkType,
+		ResultType: "site",
 		Success:    success,
-		Latency:    stats.AvgRtt,
-		PacketLoss: stats.PacketLoss,
+		Data: PingData{
+			Latency:    stats.AvgRtt,
+			PacketLoss: stats.PacketLoss,
+		},
 	}
 
-	// log.Printf("Ping Result: %+v", result)
-
-	resultJSON, _ := json.Marshal(result)
-	resultsCollectorChannel <- string(resultJSON)
+	finalResultJSON, _ := json.Marshal(result)
+	// log.Printf("Generated JSON: %s", finalResultJSON)
+	resultsCollectorChannel <- string(finalResultJSON)
 }
 
 func init() {

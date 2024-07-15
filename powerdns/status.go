@@ -2,36 +2,79 @@ package powerdns
 
 import (
 	"encoding/json"
+	"ibp-geodns/config"
 	"log"
+	"strings"
+	"sync"
 )
+
+var previousStatus = make(map[string]bool)
+var mu sync.RWMutex
 
 func updateMemberStatus() {
 	for result := range resultsChannel {
+		// log.Printf("Received result: %s", result) // Log the received result
 
-		var status map[string]bool
-		if err := json.Unmarshal([]byte(result), &status); err != nil {
-			log.Printf("Error parsing result: %v", err)
-			continue
+		results := strings.Split(result, "\n")
+		for _, res := range results {
+			if strings.TrimSpace(res) == "" {
+				continue
+			}
+
+			var siteStatus config.SiteResults
+			var endpointStatus config.EndpointResults
+
+			if err := json.Unmarshal([]byte(res), &siteStatus); err == nil && siteStatus.ResultType == "site" {
+				updateSiteStatus(siteStatus)
+			} else if err := json.Unmarshal([]byte(res), &endpointStatus); err == nil && endpointStatus.ResultType == "endpoint" {
+				updateEndpointStatus(endpointStatus)
+			} else {
+				log.Printf("Error parsing result: %v", err)
+			}
 		}
+	}
+}
 
-		// logResults(status)
+func updateSiteStatus(status config.SiteResults) {
+	mu.Lock()
+	defer mu.Unlock()
 
-		mu.Lock()
-		for memberName, success := range status {
+	for memberName, checks := range status.Members {
+		for checkName, result := range checks {
+			if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
+				log.Printf("Site status change for member %s, check %s: %v -> %v", memberName, checkName, prevSuccess, result.Success)
+				previousStatus[memberName] = result.Success
+			}
+
 			for i, config := range powerDNSConfigs {
 				if member, exists := config.Members[memberName]; exists {
-					member.Online = success
+					member.Online = result.Success
 					powerDNSConfigs[i].Members[memberName] = member
 				}
 			}
 		}
-		mu.Unlock()
 	}
 }
 
-func logResults(status map[string]bool) {
-	log.Println("Received member status update:")
-	for memberName, success := range status {
-		log.Printf("Member: %s, Online: %t\n", memberName, success)
+func updateEndpointStatus(status config.EndpointResults) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	for endpointURL, members := range status.Endpoint {
+		for memberName, checks := range members {
+			for checkName, result := range checks {
+				if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
+					log.Printf("Endpoint status change for endpoint %s, member %s, check %s: %v -> %v", endpointURL, memberName, checkName, prevSuccess, result.Success)
+					previousStatus[memberName] = result.Success
+				}
+
+				for i, config := range powerDNSConfigs {
+					if member, exists := config.Members[memberName]; exists {
+						member.Online = result.Success
+						powerDNSConfigs[i].Members[memberName] = member
+					}
+				}
+			}
+		}
 	}
 }

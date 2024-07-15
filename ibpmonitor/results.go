@@ -3,6 +3,7 @@ package ibpmonitor
 import (
 	"encoding/json"
 	"fmt"
+	"ibp-geodns/config"
 	"log"
 	"sync"
 	"time"
@@ -35,25 +36,27 @@ func (r *IbpMonitor) MonitorResults() {
 		interval = newInterval
 		ticker.Stop()
 		ticker = time.NewTicker(interval)
-		// log.Printf("Ticker interval adjusted to %v", interval)
 	}
 
 	log.Println("Starting to monitor results")
 	for {
 		select {
 		case result := <-r.ResultsCollectorChannel:
+			// log.Printf("Received JSON: %s", result)
 			r.processResult(result)
 		case <-ticker.C:
 			if r.allChecksComplete() {
 				jsonResults, err := r.sendBatchedResults()
 				if err == nil {
-					// log.Println("Sending batched results to channel")
-					r.ResultsChannel <- jsonResults
+					if jsonResults != "" {
+						//log.Printf("Sending batched results: %s", jsonResults) // Log the batched results being sent
+						r.ResultsChannel <- jsonResults
+					}
 					if interval == 100*time.Millisecond {
-						adjustTicker(30 * time.Second)
+						adjustTicker(3 * time.Second)
 					}
 				} else {
-					// log.Println("Not all checks are complete yet")
+					log.Printf("Error sending batched results: %v", err)
 				}
 			}
 		}
@@ -61,82 +64,146 @@ func (r *IbpMonitor) MonitorResults() {
 }
 
 func (r *IbpMonitor) processResult(resultJSON string) {
-	// log.Printf("Processing result: %s", resultJSON)
-
 	var tempResult map[string]interface{}
 	if err := json.Unmarshal([]byte(resultJSON), &tempResult); err != nil {
 		log.Printf("Error unmarshalling result: %v", err)
 		return
 	}
 
-	serverName, ok := tempResult["ServerName"].(string)
+	resultType, ok := tempResult["resulttype"].(string)
 	if !ok {
-		log.Printf("Error: ServerName not found or not a string in result: %v", tempResult)
+		log.Printf("Error: resulttype not found or not a string in result: %v", tempResult)
 		return
 	}
 
-	checkName, ok := tempResult["CheckName"].(string)
+	switch resultType {
+	case "site":
+		r.processSiteResult(tempResult)
+	case "endpoint":
+		r.processEndpointResult(tempResult)
+	default:
+		log.Printf("Unknown result type: %s", resultType)
+	}
+}
+
+func (r *IbpMonitor) processSiteResult(data map[string]interface{}) {
+	memberName, ok := data["servername"].(string)
 	if !ok {
-		log.Printf("Error: CheckName not found or not a string in result: %v", tempResult)
+		log.Printf("Error: ServerName not found or not a string in result: %v", data)
 		return
 	}
 
-	// log.Printf("Result for server %s, check %s", serverName, checkName)
+	checkName, ok := data["checkname"].(string)
+	if !ok {
+		log.Printf("Error: CheckName not found or not a string in result: %v", data)
+		return
+	}
 
 	r.mu.Lock()
-	nodeResults, exists := r.NodeResults[serverName]
+	nodeResults, exists := r.NodeResults[memberName]
 	if !exists {
-		// log.Printf("Node results for server %s do not exist, creating new entry", serverName)
 		nodeResults = &NodeResults{Checks: make(map[string]interface{})}
-		r.NodeResults[serverName] = nodeResults
-	} else {
-		// log.Printf("Node results for server %s found", serverName)
+		r.NodeResults[memberName] = nodeResults
 	}
 	r.mu.Unlock()
 
 	nodeResults.mu.Lock()
-	defer nodeResults.mu.Unlock()
-	nodeResults.Checks[checkName] = tempResult
-	// log.Printf("Check %s result updated for server %s", checkName, serverName)
+	nodeResults.Checks[checkName] = data
+	nodeResults.mu.Unlock()
+}
+
+func (r *IbpMonitor) processEndpointResult(data map[string]interface{}) {
+	memberName, ok := data["servername"].(string)
+	if !ok {
+		log.Printf("Error: ServerName not found or not a string in result: %v", data)
+		return
+	}
+
+	checkName, ok := data["checkname"].(string)
+	if !ok {
+		log.Printf("Error: CheckName not found or not a string in result: %v", data)
+		return
+	}
+
+	r.mu.Lock()
+	nodeResults, exists := r.NodeResults[memberName]
+	if !exists {
+		nodeResults = &NodeResults{Checks: make(map[string]interface{})}
+		r.NodeResults[memberName] = nodeResults
+	}
+	r.mu.Unlock()
+
+	nodeResults.mu.Lock()
+	nodeResults.Checks[checkName] = data
+	nodeResults.mu.Unlock()
 }
 
 func (r *IbpMonitor) sendBatchedResults() (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	results := make(map[string]bool)
-	for serverName, resultsStruct := range r.NodeResults {
-		online := true
+	siteResults := config.SiteResults{
+		ResultType: "site",
+		Members:    make(map[string]map[string]config.SiteCheckResult),
+	}
+
+	endpointResults := config.EndpointResults{
+		ResultType: "endpoint",
+		Endpoint:   make(map[string]map[string]map[string]config.EndpointCheckResult),
+	}
+
+	for memberName, resultsStruct := range r.NodeResults {
 		for checkName, checkResult := range resultsStruct.Checks {
 			checkResultMap, ok := checkResult.(map[string]interface{})
 			if !ok {
-				log.Printf("Error converting checkResult to map for server %s, check %s", serverName, checkName)
+				log.Printf("Error converting checkResult to map for member %s, check %s", memberName, checkName)
 				continue
 			}
 
-			if success, exists := checkResultMap["Success"].(bool); exists && !success {
-				online = false
-				break
+			switch checkResultMap["resulttype"] {
+			case "site":
+				if siteResults.Members[memberName] == nil {
+					siteResults.Members[memberName] = make(map[string]config.SiteCheckResult)
+				}
+				siteResults.Members[memberName][checkName] = config.SiteCheckResult{
+					CheckName:  checkName,
+					Success:    checkResultMap["success"].(bool),
+					CheckError: checkResultMap["error"].(string),
+					CheckData:  checkResultMap["data"].(map[string]interface{}),
+				}
+			case "endpoint":
+				endpointURL := checkResultMap["servername"].(string) // Adjust this to your actual endpoint identification
+				if endpointResults.Endpoint[endpointURL] == nil {
+					endpointResults.Endpoint[endpointURL] = make(map[string]map[string]config.EndpointCheckResult)
+				}
+				if endpointResults.Endpoint[endpointURL][memberName] == nil {
+					endpointResults.Endpoint[endpointURL][memberName] = make(map[string]config.EndpointCheckResult)
+				}
+				endpointResults.Endpoint[endpointURL][memberName][checkName] = config.EndpointCheckResult{
+					CheckName:  checkName,
+					Success:    checkResultMap["success"].(bool),
+					CheckError: checkResultMap["error"].(string),
+					CheckData:  checkResultMap["data"].(map[string]interface{}),
+				}
 			}
 		}
-		results[serverName] = online
-		// log.Printf("Server %s, Online: %t", serverName, online)
 	}
 
-	resultsJSON, err := json.Marshal(results)
+	siteResultsJSON, err := json.Marshal(siteResults)
 	if err != nil {
-		log.Printf("Error marshalling batched results: %v", err)
+		log.Printf("Error marshalling site results: %v", err)
 		return "", err
 	}
 
-	resultsString := string(resultsJSON)
-	if resultsString == "{}" || resultsString == "" {
-		// log.Println("Batched results are empty")
-		return "", fmt.Errorf("JSON results are empty")
+	endpointResultsJSON, err := json.Marshal(endpointResults)
+	if err != nil {
+		log.Printf("Error marshalling endpoint results: %v", err)
+		return "", err
 	}
 
-	// log.Printf("Batched results: %s", resultsJSON)
-	return string(resultsJSON), err
+	batchedResults := fmt.Sprintf("%s\n%s", string(siteResultsJSON), string(endpointResultsJSON))
+	// log.Printf("Generated batched results: %s", batchedResults)
+	return batchedResults, nil
 }
 
 func (r *IbpMonitor) allChecksComplete() bool {
@@ -150,10 +217,9 @@ func (r *IbpMonitor) allChecksComplete() bool {
 		}
 	}
 
-	for serverName, nodeResults := range r.NodeResults {
+	for _, nodeResults := range r.NodeResults {
 		for _, checkName := range checksToValidate {
 			if _, exists := nodeResults.Checks[checkName]; !exists {
-				log.Printf("Check %s not complete for server %s", checkName, serverName)
 				return false
 			}
 		}

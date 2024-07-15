@@ -26,7 +26,6 @@ func (r *IbpMonitor) performCheck(checkName string) {
 	defer r.mu.Unlock()
 
 	if len(r.Members) == 0 {
-		// No members to check
 		return
 	}
 
@@ -36,4 +35,11 @@ func (r *IbpMonitor) performCheck(checkName string) {
 			time.Sleep(100 * time.Microsecond)
 		}
 	}
+}
+
+func getIntOption(extraOptions map[string]interface{}, key string, defaultValue int) int {
+	if value, ok := extraOptions[key].(float64); ok {
+		return int(value)
+	}
+	return defaultValue
 }
