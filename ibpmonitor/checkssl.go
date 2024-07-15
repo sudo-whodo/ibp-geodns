@@ -12,6 +12,7 @@ import (
 type SslResult struct {
 	CheckName       string
 	ServerName      string
+	CheckType       string
 	Success         bool
 	ExpiryTimestamp int64
 	DaysUntilExpiry int

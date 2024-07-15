@@ -1,9 +1,10 @@
 package config
 
 type CheckConfig struct {
-	Enabled       int `json:"enabled"`
-	Timeout       int `json:"timeout"`
-	CheckInterval int `json:"checkInterval"`
+	Enabled       int                    `json:"Enabled"`
+	Timeout       int                    `json:"Timeout"`
+	CheckInterval int                    `json:"CheckInterval"`
+	ExtraOptions  map[string]interface{} `json:"ExtraOptions"`
 }
 
 type Config struct {

@@ -42,7 +42,7 @@ func getClientCoordinates(ipStr string) (float64, float64, error) {
 }
 
 func distance(lat1, lon1, lat2, lon2 float64) float64 {
-	const R = 6371 // Radius of the Earth in km
+	const R = 6371
 	dLat := (lat2 - lat1) * (math.Pi / 180.0)
 	dLon := (lon2 - lon1) * (math.Pi / 180.0)
 

@@ -14,7 +14,6 @@ func handleLookup(params Parameters) Response {
 	domain := strings.TrimSuffix(params.Qname, ".")
 	log.Printf("Looking up domain: %s, type: %s", domain, params.Qtype)
 
-	// Check for ACME challenge
 	if strings.HasPrefix(domain, "_acme-challenge.") {
 		acmeRecords, exists := staticEntries[domain]
 		if exists && len(acmeRecords) > 0 {
@@ -39,7 +38,6 @@ func handleLookup(params Parameters) Response {
 		}
 	}
 
-	// Check for static entries first
 	if records, exists := staticEntries[domain]; exists {
 		staticRecords := []Record{}
 		for _, record := range records {
@@ -145,7 +143,6 @@ func fetchACMEChallenge(url string) (string, error) {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Trim any extraneous whitespace or control characters
 	content := strings.TrimSpace(string(body))
 	return content, nil
 }

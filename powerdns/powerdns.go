@@ -28,7 +28,6 @@ func Init(configs []DNS, resultsCh chan string, initialResults map[string]bool, 
 
 	go startStaticEntriesUpdater(staticEntriesURL)
 
-	// Initialize the powerDNSConfigs with the initialResults
 	for i, config := range configs {
 		for memberName := range config.Members {
 			if online, exists := initialResults[memberName]; exists {
@@ -47,7 +46,6 @@ func Init(configs []DNS, resultsCh chan string, initialResults map[string]bool, 
 	powerDNSConfigs = configs
 	resultsChannel = resultsCh
 
-	// Extract top-level domains
 	topLevelDomains = make(map[string]bool)
 	for _, config := range configs {
 		parts := strings.Split(config.Domain, ".")

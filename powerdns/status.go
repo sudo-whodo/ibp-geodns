@@ -14,7 +14,7 @@ func updateMemberStatus() {
 			continue
 		}
 
-		logResults(status)
+		// logResults(status)
 
 		mu.Lock()
 		for memberName, success := range status {

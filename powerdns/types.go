@@ -1,6 +1,5 @@
 package powerdns
 
-// Record represents a DNS record.
 type Record struct {
 	Qtype    string `json:"qtype"`
 	Qname    string `json:"qname"`
@@ -10,13 +9,11 @@ type Record struct {
 	DomainID int    `json:"domain_id"`
 }
 
-// DNS represents a DNS configuration for a domain.
 type DNS struct {
 	Domain  string            `json:"domain"`
 	Members map[string]Member `json:"members"`
 }
 
-// Member represents a member of a DNS configuration.
 type Member struct {
 	MemberName string  `json:"member_name"`
 	IPv4       string  `json:"ipv4"`

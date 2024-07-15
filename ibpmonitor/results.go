@@ -120,7 +120,7 @@ func (r *IbpMonitor) sendBatchedResults() (string, error) {
 			}
 		}
 		results[serverName] = online
-		log.Printf("Server %s, Online: %t", serverName, online)
+		// log.Printf("Server %s, Online: %t", serverName, online)
 	}
 
 	resultsJSON, err := json.Marshal(results)

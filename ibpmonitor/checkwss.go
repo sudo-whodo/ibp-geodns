@@ -15,6 +15,7 @@ import (
 type WssResult struct {
 	CheckName  string
 	ServerName string
+	CheckType  string
 	Success    bool
 	Latency    time.Duration
 	Error      error
