@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"ibp-geodns/config"
-	"ibp-geodns/ibpconfig"
 	"ibp-geodns/ibpmonitor"
 	"ibp-geodns/powerdns"
 	"log"
@@ -31,20 +30,20 @@ func loadConfig(filename string) (*config.Config, error) {
 func main() {
 	log.Println("Starting the application...")
 
-	config, err := loadConfig("config.json")
+	configfile, err := loadConfig("config.json")
 	if err != nil {
 		log.Printf("Failed to load config: %v", err)
 	}
 
 	done := make(chan bool)
-	ibpconfig.Init(done, config.MembersConfigUrl, config.ServicesConfigUrl)
+	config.Init(done, configfile.MembersConfigUrl, configfile.ServicesConfigUrl)
 
 	log.Println("Waiting for initial configuration to be ready...")
 	<-done
 	log.Println("Initial configuration is ready")
 
 	log.Println("Extracting DNS and Endpoints...")
-	endpoints, memberServices, serviceEndpoints := ibpconfig.ExtractData()
+	endpoints, memberServices, serviceEndpoints := config.ExtractData()
 	log.Println("Extraction complete")
 
 	var powerDNSConfigs []powerdns.DNS
@@ -94,10 +93,10 @@ func main() {
 	}
 	log.Println("IBP Monitor configuration populated")
 
-	healthChecker := ibpmonitor.NewIbpMonitor(ibpMonitorConfigs, config)
+	healthChecker := ibpmonitor.NewIbpMonitor(ibpMonitorConfigs, configfile)
 	resultsChannel := healthChecker.Start()
 
-	powerdns.Init(powerDNSConfigs, resultsChannel, config.GeoliteDBPath, config.StaticDNSConfigUrl)
+	powerdns.Init(powerDNSConfigs, resultsChannel, configfile.GeoliteDBPath, configfile.StaticDNSConfigUrl)
 
 	select {}
 }
