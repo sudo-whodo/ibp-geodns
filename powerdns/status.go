@@ -42,7 +42,7 @@ func updateSiteStatus(status config.SiteResults) {
 	for memberName, checks := range status.Members {
 		for checkName, result := range checks {
 			if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
-				log.Printf("Site status change for member %s, check %s: %v -> %v", memberName, checkName, prevSuccess, result.Success)
+				log.Printf("Site status change for member %s, check %s: %v -> %v - Result Data: %v", memberName, checkName, prevSuccess, result.Success, result.CheckData)
 				previousStatus[memberName] = result.Success
 			}
 
@@ -64,7 +64,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 		for memberName, checks := range members {
 			for checkName, result := range checks {
 				if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
-					log.Printf("Endpoint status change for endpoint %s, member %s, check %s: %v -> %v", endpointURL, memberName, checkName, prevSuccess, result.Success)
+					log.Printf("Endpoint status change for endpoint %s, member %s, check %s: %v -> %v - Result Data: %v", endpointURL, memberName, checkName, prevSuccess, result.Success, result.CheckData)
 					previousStatus[memberName] = result.Success
 				}
 

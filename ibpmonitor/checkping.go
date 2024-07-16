@@ -3,7 +3,6 @@ package ibpmonitor
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"ibp-geodns/config"
@@ -82,7 +81,7 @@ func PingCheck(member Member, options config.CheckConfig, resultsCollectorChanne
 	success := stats.PacketLoss <= float64(maxPacketLoss) && stats.AvgRtt.Milliseconds() <= int64(maxLatency) && stats.AvgRtt != 0
 
 	if !success {
-		log.Printf("Member: %s failed ping check - Packet Loss: %v (Max: %v) Latency: %d (Max: %d)", member.MemberName, stats.PacketLoss, float64(maxPacketLoss), stats.AvgRtt.Milliseconds(), int64(maxLatency))
+		// log.Printf("Member: %s failed ping check - Packet Loss: %v (Max: %v) Latency: %d (Max: %d)", member.MemberName, stats.PacketLoss, float64(maxPacketLoss), stats.AvgRtt.Milliseconds(), int64(maxLatency))
 	}
 
 	result := PingResult{
@@ -91,7 +90,7 @@ func PingCheck(member Member, options config.CheckConfig, resultsCollectorChanne
 		ResultType: "site",
 		Success:    success,
 		Data: PingData{
-			Latency:    stats.AvgRtt,
+			Latency:    time.Duration(stats.AvgRtt.Milliseconds()),
 			PacketLoss: stats.PacketLoss,
 		},
 	}
