@@ -20,8 +20,8 @@ type PingResult struct {
 }
 
 type PingData struct {
-	Latency    time.Duration `json:"latency"`
-	PacketLoss float64       `json:"packetloss"`
+	Latency    int64   `json:"latency"`
+	PacketLoss float64 `json:"packetloss"`
 }
 
 func PingCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
@@ -90,7 +90,7 @@ func PingCheck(member Member, options config.CheckConfig, resultsCollectorChanne
 		ResultType: "site",
 		Success:    success,
 		Data: PingData{
-			Latency:    time.Duration(stats.AvgRtt.Milliseconds()),
+			Latency:    stats.AvgRtt.Milliseconds(),
 			PacketLoss: stats.PacketLoss,
 		},
 	}

@@ -1,15 +1,22 @@
 {
+    "ServerName": "Test Build",
     "GeoliteDBPath": "GeoLite2-City.mmdb",
     "StaticDNSConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/geodns-static.json",
     "MembersConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/members_professional.json",
     "ServicesConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/services_rpc.json",
+    "matrix": {
+        "HomeServerURL": "https://matrix.org",
+        "Username": "ibpdns",
+        "Password": "",
+        "RoomID": ""
+    },
     "Checks": {
         "ping": {
             "Enabled": 1,
             "CheckType": "site",
-            "Timeout": 10,
-            "CheckInterval": 30,
-            "ExtraOptions": {"PingCount": 80, "PingInterval": 25, "PingTimeout": 5000, "PingTTL": 64, "PingSize": 24, "MaxPacketLoss": 10, "MaxLatency": 800}
+            "Timeout": 12,
+            "CheckInterval": 60,
+            "ExtraOptions": {"PingCount": 100, "PingInterval": 20, "PingTimeout": 4000, "PingTTL": 64, "PingSize": 24, "MaxPacketLoss": 5, "MaxLatency": 800}
         },
         "ssl": {
             "Enabled": 0,

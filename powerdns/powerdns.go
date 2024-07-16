@@ -1,6 +1,7 @@
 package powerdns
 
 import (
+	"ibp-geodns/config"
 	"log"
 	"net/http"
 	"strings"
@@ -9,22 +10,25 @@ import (
 var (
 	powerDNSConfigs []DNS
 	resultsChannel  chan string
+	configData      *config.Config
 	staticEntries   map[string][]Record
 	topLevelDomains map[string]bool
 )
 
-func Init(configs []DNS, resultsCh chan string, geoIPDBPath string, staticEntriesURL string) {
-	err := InitGeoIP(geoIPDBPath)
+func Init(configs []DNS, resultsCh chan string, config *config.Config) {
+	configData = config
+
+	err := InitGeoIP(config.GeoliteDBPath)
 	if err != nil {
 		log.Printf("Failed to initialize GeoIP database: %v", err)
 	}
 
-	err = loadStaticEntries(staticEntriesURL)
+	err = loadStaticEntries(config.StaticDNSConfigUrl)
 	if err != nil {
 		log.Printf("Failed to load static entries: %v", err)
 	}
 
-	go startStaticEntriesUpdater(staticEntriesURL)
+	go startStaticEntriesUpdater(config.StaticDNSConfigUrl)
 
 	powerDNSConfigs = configs
 	resultsChannel = resultsCh

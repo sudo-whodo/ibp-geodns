@@ -9,11 +9,20 @@ type CheckConfig struct {
 }
 
 type Config struct {
+	ServerName         string                 `json:"ServerName"`
 	GeoliteDBPath      string                 `json:"GeoliteDBPath"`
 	StaticDNSConfigUrl string                 `json:"StaticDNSConfigUrl"`
 	MembersConfigUrl   string                 `json:"MembersConfigUrl"`
 	ServicesConfigUrl  string                 `json:"ServicesConfigUrl"`
+	Matrix             *Matrix                `json:"Matrix"`
 	Checks             map[string]CheckConfig `json:"Checks"`
+}
+
+type Matrix struct {
+	HomeServerURL string `json:"HomeServerURL"`
+	Username      string `json:"Username"`
+	Password      string `json:"Password"`
+	RoomID        string `json:"RoomID"`
 }
 
 type SiteCheckResult struct {

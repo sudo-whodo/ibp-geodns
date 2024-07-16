@@ -2,7 +2,9 @@ package powerdns
 
 import (
 	"encoding/json"
+	"fmt"
 	"ibp-geodns/config"
+	"ibp-geodns/matrixbot"
 	"log"
 	"strings"
 	"sync"
@@ -42,7 +44,16 @@ func updateSiteStatus(status config.SiteResults) {
 	for memberName, checks := range status.Members {
 		for checkName, result := range checks {
 			if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
-				log.Printf("Site status change for member %s, check %s: %v -> %v - Result Data: %v", memberName, checkName, prevSuccess, result.Success, result.CheckData)
+				bot, err := matrixbot.NewMatrixBot(configData.Matrix.HomeServerURL, configData.Matrix.Username, configData.Matrix.Password, configData.Matrix.RoomID)
+				if err != nil {
+					log.Printf("Error initializing Matrix bot: %v", err)
+				} else {
+					message := fmt.Sprintf("<b>Site Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s</i><br><i><b>Check %s:</b> %v -> %v</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, checkName, prevSuccess, result.Success, result.CheckData)
+					_ = bot.SendMessage(message)
+				}
+
+				log.Printf("Site Status Change: Server %s member %s - check %s: %v -> %v - Result Data: %v", configData.ServerName, memberName, checkName, prevSuccess, result.Success, result.CheckData)
+
 				previousStatus[memberName] = result.Success
 			}
 
@@ -64,7 +75,16 @@ func updateEndpointStatus(status config.EndpointResults) {
 		for memberName, checks := range members {
 			for checkName, result := range checks {
 				if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
-					log.Printf("Endpoint status change for endpoint %s, member %s, check %s: %v -> %v - Result Data: %v", endpointURL, memberName, checkName, prevSuccess, result.Success, result.CheckData)
+					bot, err := matrixbot.NewMatrixBot(configData.Matrix.HomeServerURL, configData.Matrix.Username, configData.Matrix.Password, configData.Matrix.RoomID)
+					if err != nil {
+						log.Printf("Error initializing Matrix bot: %v", err)
+					} else {
+						message := fmt.Sprintf("<b>EndPoint Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s <b>Domain:</b> %s</i><br><i><b>Check %s:</b> %v -> %v</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, endpointURL, checkName, prevSuccess, result.Success, result.CheckData)
+						_ = bot.SendMessage(message)
+					}
+
+					log.Printf("EndPoint Status Change: Server %s - member %s on %s - Check %s: %v -> %v - Result Data: %v", configData.ServerName, memberName, endpointURL, checkName, prevSuccess, result.Success, result.CheckData)
+
 					previousStatus[memberName] = result.Success
 				}
 

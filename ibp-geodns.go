@@ -96,7 +96,7 @@ func main() {
 	healthChecker := ibpmonitor.NewIbpMonitor(ibpMonitorConfigs, configfile)
 	resultsChannel := healthChecker.Start()
 
-	powerdns.Init(powerDNSConfigs, resultsChannel, configfile.GeoliteDBPath, configfile.StaticDNSConfigUrl)
+	powerdns.Init(powerDNSConfigs, resultsChannel, configfile)
 
 	select {}
 }
