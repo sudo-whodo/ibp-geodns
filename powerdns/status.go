@@ -73,7 +73,9 @@ func updateSiteStatus(status config.SiteResults) {
 						continue
 					}
 
-					if !member.Results[checkName].OfflineTS.IsZero() {
+					if !member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() >= float64(configData.MinimumOfflineTime) {
+						member.Results[checkName] = Result{Success: true}
+						previousStatus["site"][memberName][checkName] = result.Success
 						sendMatrixMessage(fmt.Sprintf("<b>Adding member</b> <i>%s</i> <b>to all rotations</b><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", memberName, configData.ServerName, checkName, result.CheckData))
 						logStatusChange("Site Status Change", memberName, checkName, false, true, result.CheckData)
 					}
@@ -146,7 +148,9 @@ func updateEndpointStatus(status config.EndpointResults) {
 							continue
 						}
 
-						if !member.Results[checkName].OfflineTS.IsZero() {
+						if !member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() >= float64(configData.MinimumOfflineTime) {
+							member.Results[checkName] = Result{Success: true}
+							previousStatus[endpointURL][memberName][checkName] = result.Success
 							sendMatrixMessage(fmt.Sprintf("<b>Adding member</b> <i>%s</i> <b>to endpoint</b> <i>%s</i><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", memberName, endpointURL, configData.ServerName, checkName, result.CheckData))
 							logStatusChange("EndPoint Status Change", memberName, checkName, false, true, result.CheckData)
 						}
