@@ -53,12 +53,16 @@ func updateSiteStatus(status config.SiteResults) {
 				previousStatus["site"][memberName] = make(map[string]bool)
 			}
 
-			if previousStatus["site"][memberName][checkName] != result.Success {
-				// log.Printf("Status change detected for site member %s check %s: %v -> %v", memberName, checkName, previousStatus["site"][memberName][checkName], result.Success)
-				previousStatus["site"][memberName][checkName] = result.Success
+			member, memberExists := getMember(memberName)
+			if !memberExists {
+				continue
+			}
 
-				member, memberExists := getMember(memberName)
-				if memberExists {
+			if previousStatus["site"][memberName][checkName] != result.Success {
+				log.Printf("Status change detected for site member %s check %s: %v -> %v", memberName, checkName, previousStatus["site"][memberName][checkName], result.Success)
+				if result.Success || (!member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime)) {
+					previousStatus["site"][memberName][checkName] = result.Success
+
 					if member.Results == nil {
 						member.Results = make(map[string]Result)
 					}
@@ -68,9 +72,7 @@ func updateSiteStatus(status config.SiteResults) {
 							OfflineTS: time.Now(),
 						}
 					} else {
-						if member.Results[checkName].OfflineTS.IsZero() || time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime) {
-							member.Results[checkName] = Result{Success: true}
-						}
+						member.Results[checkName] = Result{Success: true}
 					}
 					for i := range powerDNSConfigs {
 						powerDNSConfigs[i].Members[memberName] = member
@@ -78,27 +80,22 @@ func updateSiteStatus(status config.SiteResults) {
 					if !result.Success {
 						sendMatrixMessage(fmt.Sprintf("<b>Site Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s</i><br><i><b>Check %s:</b> true -> false</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, checkName, result.CheckData))
 						logStatusChange("Site Status Change", memberName, checkName, true, false, result.CheckData)
-					} else if member.Results[checkName].OfflineTS.IsZero() || time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime) {
-						if !member.Results[checkName].OfflineTS.IsZero() {
-							sendMatrixMessage(fmt.Sprintf("<b>Site Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, checkName, result.CheckData))
-							logStatusChange("Site Status Change", memberName, checkName, false, true, result.CheckData)
-						}
+					} else if !member.Results[checkName].OfflineTS.IsZero() {
+						sendMatrixMessage(fmt.Sprintf("<b>Site Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, checkName, result.CheckData))
+						logStatusChange("Site Status Change", memberName, checkName, false, true, result.CheckData)
 					}
 				}
 			} else {
 				if !result.Success {
-					member, memberExists := getMember(memberName)
-					if memberExists {
-						if member.Results == nil {
-							member.Results = make(map[string]Result)
-						}
-						member.Results[checkName] = Result{
-							Success:   false,
-							OfflineTS: time.Now(),
-						}
-						for i := range powerDNSConfigs {
-							powerDNSConfigs[i].Members[memberName] = member
-						}
+					if member.Results == nil {
+						member.Results = make(map[string]Result)
+					}
+					member.Results[checkName] = Result{
+						Success:   false,
+						OfflineTS: time.Now(),
+					}
+					for i := range powerDNSConfigs {
+						powerDNSConfigs[i].Members[memberName] = member
 					}
 				}
 			}
@@ -122,12 +119,16 @@ func updateEndpointStatus(status config.EndpointResults) {
 					previousStatus[endpointURL][memberName] = make(map[string]bool)
 				}
 
-				if previousStatus[endpointURL][memberName][checkName] != result.Success {
-					// log.Printf("Status change detected for endpoint member %s check %s: %v -> %v", memberName, checkName, previousStatus[endpointURL][memberName][checkName], result.Success)
-					previousStatus[endpointURL][memberName][checkName] = result.Success
+				member, memberExists := getMember(memberName)
+				if !memberExists {
+					continue
+				}
 
-					member, memberExists := getMember(memberName)
-					if memberExists {
+				if previousStatus[endpointURL][memberName][checkName] != result.Success {
+					log.Printf("Status change detected for endpoint member %s check %s: %v -> %v", memberName, checkName, previousStatus[endpointURL][memberName][checkName], result.Success)
+					if result.Success || (!member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime)) {
+						previousStatus[endpointURL][memberName][checkName] = result.Success
+
 						if member.Results == nil {
 							member.Results = make(map[string]Result)
 						}
@@ -137,9 +138,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 								OfflineTS: time.Now(),
 							}
 						} else {
-							if member.Results[checkName].OfflineTS.IsZero() || time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime) {
-								member.Results[checkName] = Result{Success: true}
-							}
+							member.Results[checkName] = Result{Success: true}
 						}
 						for j := range powerDNSConfigs {
 							if powerDNSConfigs[j].Domain == endpointURL {
@@ -149,28 +148,23 @@ func updateEndpointStatus(status config.EndpointResults) {
 						if !result.Success {
 							sendMatrixMessage(fmt.Sprintf("<b>EndPoint Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s <b>Domain:</b> %s</i><br><i><b>Check %s:</b> true -> false</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, endpointURL, checkName, result.CheckData))
 							logStatusChange("EndPoint Status Change", memberName, checkName, true, false, result.CheckData)
-						} else if member.Results[checkName].OfflineTS.IsZero() || time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime) {
-							if !member.Results[checkName].OfflineTS.IsZero() {
-								sendMatrixMessage(fmt.Sprintf("<b>EndPoint Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s <b>Domain:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, endpointURL, checkName, result.CheckData))
-								logStatusChange("EndPoint Status Change", memberName, checkName, false, true, result.CheckData)
-							}
+						} else if !member.Results[checkName].OfflineTS.IsZero() {
+							sendMatrixMessage(fmt.Sprintf("<b>EndPoint Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s <b>Domain:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, endpointURL, checkName, result.CheckData))
+							logStatusChange("EndPoint Status Change", memberName, checkName, false, true, result.CheckData)
 						}
 					}
 				} else {
 					if !result.Success {
-						member, memberExists := getMember(memberName)
-						if memberExists {
-							if member.Results == nil {
-								member.Results = make(map[string]Result)
-							}
-							member.Results[checkName] = Result{
-								Success:   false,
-								OfflineTS: time.Now(),
-							}
-							for j := range powerDNSConfigs {
-								if powerDNSConfigs[j].Domain == endpointURL {
-									powerDNSConfigs[j].Members[memberName] = member
-								}
+						if member.Results == nil {
+							member.Results = make(map[string]Result)
+						}
+						member.Results[checkName] = Result{
+							Success:   false,
+							OfflineTS: time.Now(),
+						}
+						for j := range powerDNSConfigs {
+							if powerDNSConfigs[j].Domain == endpointURL {
+								powerDNSConfigs[j].Members[memberName] = member
 							}
 						}
 					}
