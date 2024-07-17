@@ -15,13 +15,11 @@ type MatrixBot struct {
 }
 
 func NewMatrixBot(homeserverURL, username, password, roomID string) (*MatrixBot, error) {
-	// Create a new Matrix client
 	client, err := mautrix.NewClient(homeserverURL, "", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	// Log in to the Matrix server
 	loginReq := mautrix.ReqLogin{
 		Type: mautrix.AuthTypePassword,
 		Identifier: mautrix.UserIdentifier{
@@ -35,7 +33,6 @@ func NewMatrixBot(homeserverURL, username, password, roomID string) (*MatrixBot,
 		return nil, fmt.Errorf("failed to log in: %w", err)
 	}
 
-	// Set the access token on the client
 	client.SetCredentials(loginResp.UserID, loginResp.AccessToken)
 
 	return &MatrixBot{

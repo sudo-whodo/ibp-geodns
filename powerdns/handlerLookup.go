@@ -88,7 +88,14 @@ func handleLookup(params Parameters) Response {
 	for _, config := range powerDNSConfigs {
 		if config.Domain == domain {
 			for _, member := range config.Members {
-				if member.Online {
+				success := true
+				for _, result := range member.Results {
+					if !result.Success {
+						success = false
+						break
+					}
+				}
+				if success {
 					dist := distance(clientLat, clientLon, member.Latitude, member.Longitude)
 					if dist < minDistance {
 						minDistance = dist

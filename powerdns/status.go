@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-var previousStatus = make(map[string]bool)
+var previousStatus = make(map[string]map[string]map[string]bool)
 var mu sync.RWMutex
 
 func updateMemberStatus() {
@@ -43,23 +43,32 @@ func updateSiteStatus(status config.SiteResults) {
 
 	for memberName, checks := range status.Members {
 		for checkName, result := range checks {
-			if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
+			if previousStatus["site"] == nil {
+				previousStatus["site"] = make(map[string]map[string]bool)
+			}
+			if previousStatus["site"][memberName] == nil {
+				previousStatus["site"][memberName] = make(map[string]bool)
+			}
+			if prevSuccess, exists := previousStatus["site"][memberName][checkName]; !exists || prevSuccess != result.Success {
 				bot, err := matrixbot.NewMatrixBot(configData.Matrix.HomeServerURL, configData.Matrix.Username, configData.Matrix.Password, configData.Matrix.RoomID)
 				if err != nil {
 					log.Printf("Error initializing Matrix bot: %v", err)
 				} else {
 					message := fmt.Sprintf("<b>Site Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s</i><br><i><b>Check %s:</b> %v -> %v</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, checkName, prevSuccess, result.Success, result.CheckData)
-					_ = bot.SendMessage(message)
+					go bot.SendMessage(message)
 				}
 
 				log.Printf("Site Status Change: Server %s member %s - check %s: %v -> %v - Result Data: %v", configData.ServerName, memberName, checkName, prevSuccess, result.Success, result.CheckData)
 
-				previousStatus[memberName] = result.Success
+				previousStatus["site"][memberName][checkName] = result.Success
 			}
 
 			for i, config := range powerDNSConfigs {
 				if member, exists := config.Members[memberName]; exists {
-					member.Online = result.Success
+					if member.Results == nil {
+						member.Results = make(map[string]Result)
+					}
+					member.Results[checkName] = Result{Success: result.Success}
 					powerDNSConfigs[i].Members[memberName] = member
 				}
 			}
@@ -74,24 +83,35 @@ func updateEndpointStatus(status config.EndpointResults) {
 	for endpointURL, members := range status.Endpoint {
 		for memberName, checks := range members {
 			for checkName, result := range checks {
-				if prevSuccess, exists := previousStatus[memberName]; !exists || prevSuccess != result.Success {
+				if previousStatus[endpointURL] == nil {
+					previousStatus[endpointURL] = make(map[string]map[string]bool)
+				}
+				if previousStatus[endpointURL][memberName] == nil {
+					previousStatus[endpointURL][memberName] = make(map[string]bool)
+				}
+				if prevSuccess, exists := previousStatus[endpointURL][memberName][checkName]; !exists || prevSuccess != result.Success {
 					bot, err := matrixbot.NewMatrixBot(configData.Matrix.HomeServerURL, configData.Matrix.Username, configData.Matrix.Password, configData.Matrix.RoomID)
 					if err != nil {
 						log.Printf("Error initializing Matrix bot: %v", err)
 					} else {
 						message := fmt.Sprintf("<b>EndPoint Status Change</b><br><i><b>Server:</b> %s</i><br><i><b>Member:</b> %s <b>Domain:</b> %s</i><br><i><b>Check %s:</b> %v -> %v</i><BR><b>Result Data:</b> %v", configData.ServerName, memberName, endpointURL, checkName, prevSuccess, result.Success, result.CheckData)
-						_ = bot.SendMessage(message)
+						go bot.SendMessage(message)
 					}
 
 					log.Printf("EndPoint Status Change: Server %s - member %s on %s - Check %s: %v -> %v - Result Data: %v", configData.ServerName, memberName, endpointURL, checkName, prevSuccess, result.Success, result.CheckData)
 
-					previousStatus[memberName] = result.Success
+					previousStatus[endpointURL][memberName][checkName] = result.Success
 				}
 
 				for i, config := range powerDNSConfigs {
-					if member, exists := config.Members[memberName]; exists {
-						member.Online = result.Success
-						powerDNSConfigs[i].Members[memberName] = member
+					if config.Domain == endpointURL {
+						if member, exists := config.Members[memberName]; exists {
+							if member.Results == nil {
+								member.Results = make(map[string]Result)
+							}
+							member.Results[checkName] = Result{Success: result.Success}
+							powerDNSConfigs[i].Members[memberName] = member
+						}
 					}
 				}
 			}

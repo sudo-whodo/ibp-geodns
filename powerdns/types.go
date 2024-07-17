@@ -15,12 +15,16 @@ type DNS struct {
 }
 
 type Member struct {
-	MemberName string  `json:"member_name"`
-	IPv4       string  `json:"ipv4"`
-	IPv6       string  `json:"ipv6"`
-	Latitude   float64 `json:"latitude"`
-	Longitude  float64 `json:"longitude"`
-	Online     bool    `json:"online"`
+	MemberName string            `json:"member_name"`
+	IPv4       string            `json:"ipv4"`
+	IPv6       string            `json:"ipv6"`
+	Latitude   float64           `json:"latitude"`
+	Longitude  float64           `json:"longitude"`
+	Results    map[string]Result `json:"results"`
+}
+
+type Result struct {
+	Success bool `json:"success"`
 }
 
 type Request struct {

@@ -59,7 +59,6 @@ func main() {
 				IPv6:       endpoint.IPv6,
 				Latitude:   endpoint.Latitude,
 				Longitude:  endpoint.Longitude,
-				Online:     false,
 			}
 			dnsConfig.Members[memberName] = member
 		}
