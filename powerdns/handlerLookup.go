@@ -11,7 +11,7 @@ import (
 )
 
 func handleLookup(params Parameters) Response {
-	domain := strings.TrimSuffix(params.Qname, ".")
+	domain := strings.ToLower(strings.TrimSuffix(params.Qname, "."))
 	log.Printf("Looking up domain: %s, type: %s", domain, params.Qtype)
 
 	// Check for ACME challenge records
