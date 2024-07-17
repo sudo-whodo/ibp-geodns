@@ -228,38 +228,24 @@ func logStatusChange(changeType, memberName, checkName string, prevSuccess, newS
 func formatPowerDNSConfigs() string {
 	var sb strings.Builder
 	for _, config := range powerDNSConfigs {
-		sb.WriteString(fmt.Sprintf("Domain: %s\n", config.Domain))
+		sb.WriteString(fmt.Sprintf("<b>Domain: %s</b><br>", config.Domain))
 		for memberName, member := range config.Members {
-			sb.WriteString(fmt.Sprintf("  Member: %s\n", memberName))
-			sb.WriteString(fmt.Sprintf("    IPv4: %s\n", member.IPv4))
-			sb.WriteString(fmt.Sprintf("    IPv6: %s\n", member.IPv6))
-			sb.WriteString(fmt.Sprintf("    Latitude: %f\n", member.Latitude))
-			sb.WriteString(fmt.Sprintf("    Longitude: %f\n", member.Longitude))
-			sb.WriteString(fmt.Sprintf("    Results:\n"))
-			for checkName, result := range member.Results {
-				sb.WriteString(fmt.Sprintf("      Check: %s\n", checkName))
-				sb.WriteString(fmt.Sprintf("        Success: %v\n", result.Success))
-				if !result.OfflineTS.IsZero() {
-					sb.WriteString(fmt.Sprintf("        OfflineTS: %s\n", result.OfflineTS))
-				}
-			}
+			sb.WriteString(fmt.Sprintf("  Member: %s IPv4: %s IPv6: %s Latitude: %f Longitude: %f Results: %v<br>", memberName, member.IPv4, member.IPv6, member.Latitude, member.Longitude, member.Results))
 		}
-		sb.WriteString("\n")
 	}
 	return sb.String()
 }
 
 func sendPowerDNSConfigsToMatrix() {
 	message := formatPowerDNSConfigs()
+	log.Printf("%s", message)
 	sendMatrixMessage(message)
 }
 
 func startConfigReportTicker() {
 	ticker := time.NewTicker(15 * time.Minute)
-	go func() {
-		for {
-			<-ticker.C
-			sendPowerDNSConfigsToMatrix()
-		}
-	}()
+	for {
+		<-ticker.C
+		sendPowerDNSConfigsToMatrix()
+	}
 }
