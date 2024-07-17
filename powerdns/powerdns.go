@@ -42,6 +42,7 @@ func Init(configs []DNS, resultsCh chan string, config *config.Config) {
 		}
 	}
 
+	go startConfigReportTicker()
 	go updateMemberStatus()
 
 	http.HandleFunc("/dns", dnsHandler)

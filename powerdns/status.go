@@ -224,3 +224,42 @@ func sendMatrixMessage(message string) {
 func logStatusChange(changeType, memberName, checkName string, prevSuccess, newSuccess bool, resultData interface{}) {
 	log.Printf("%s: Server %s - member %s - Check %s: %v -> %v - Result Data: %v", changeType, configData.ServerName, memberName, checkName, prevSuccess, newSuccess, resultData)
 }
+
+func formatPowerDNSConfigs() string {
+	var sb strings.Builder
+	for _, config := range powerDNSConfigs {
+		sb.WriteString(fmt.Sprintf("Domain: %s\n", config.Domain))
+		for memberName, member := range config.Members {
+			sb.WriteString(fmt.Sprintf("  Member: %s\n", memberName))
+			sb.WriteString(fmt.Sprintf("    IPv4: %s\n", member.IPv4))
+			sb.WriteString(fmt.Sprintf("    IPv6: %s\n", member.IPv6))
+			sb.WriteString(fmt.Sprintf("    Latitude: %f\n", member.Latitude))
+			sb.WriteString(fmt.Sprintf("    Longitude: %f\n", member.Longitude))
+			sb.WriteString(fmt.Sprintf("    Results:\n"))
+			for checkName, result := range member.Results {
+				sb.WriteString(fmt.Sprintf("      Check: %s\n", checkName))
+				sb.WriteString(fmt.Sprintf("        Success: %v\n", result.Success))
+				if !result.OfflineTS.IsZero() {
+					sb.WriteString(fmt.Sprintf("        OfflineTS: %s\n", result.OfflineTS))
+				}
+			}
+		}
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+func sendPowerDNSConfigsToMatrix() {
+	message := formatPowerDNSConfigs()
+	sendMatrixMessage(message)
+}
+
+func startConfigReportTicker() {
+	ticker := time.NewTicker(1 * time.Hour)
+	go func() {
+		for {
+			<-ticker.C
+			sendPowerDNSConfigsToMatrix()
+		}
+	}()
+}
