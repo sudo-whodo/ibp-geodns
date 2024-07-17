@@ -111,7 +111,7 @@ func handleLookup(params Parameters) Response {
 							Qtype:    "A",
 							Qname:    domain,
 							Content:  closestMember.IPv4,
-							Ttl:      3600,
+							Ttl:      30,
 							Auth:     true,
 							DomainID: params.ZoneID,
 						})
@@ -123,7 +123,7 @@ func handleLookup(params Parameters) Response {
 							Qtype:    "AAAA",
 							Qname:    domain,
 							Content:  closestMember.IPv6,
-							Ttl:      3600,
+							Ttl:      30,
 							Auth:     true,
 							DomainID: params.ZoneID,
 						})
