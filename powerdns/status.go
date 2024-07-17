@@ -59,7 +59,7 @@ func updateSiteStatus(status config.SiteResults) {
 			}
 
 			if previousStatus["site"][memberName][checkName] != result.Success {
-				log.Printf("Status change detected for site member %s check %s: %v -> %v", memberName, checkName, previousStatus["site"][memberName][checkName], result.Success)
+				// log.Printf("Status change detected for site member %s check %s: %v -> %v", memberName, checkName, previousStatus["site"][memberName][checkName], result.Success)
 
 				if member.Results == nil {
 					member.Results = make(map[string]Result)
