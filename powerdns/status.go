@@ -60,12 +60,14 @@ func updateSiteStatus(status config.SiteResults) {
 
 			if previousStatus["site"][memberName][checkName] != result.Success {
 				log.Printf("Status change detected for site member %s check %s: %v -> %v", memberName, checkName, previousStatus["site"][memberName][checkName], result.Success)
+
+				if member.Results == nil {
+					member.Results = make(map[string]Result)
+				}
+
 				if result.Success || (!member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime)) {
 					previousStatus["site"][memberName][checkName] = result.Success
 
-					if member.Results == nil {
-						member.Results = make(map[string]Result)
-					}
 					if !result.Success {
 						member.Results[checkName] = Result{
 							Success:   false,
@@ -126,12 +128,14 @@ func updateEndpointStatus(status config.EndpointResults) {
 
 				if previousStatus[endpointURL][memberName][checkName] != result.Success {
 					log.Printf("Status change detected for endpoint member %s check %s: %v -> %v", memberName, checkName, previousStatus[endpointURL][memberName][checkName], result.Success)
+
+					if member.Results == nil {
+						member.Results = make(map[string]Result)
+					}
+
 					if result.Success || (!member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() > float64(configData.MinimumOfflineTime)) {
 						previousStatus[endpointURL][memberName][checkName] = result.Success
 
-						if member.Results == nil {
-							member.Results = make(map[string]Result)
-						}
 						if !result.Success {
 							member.Results[checkName] = Result{
 								Success:   false,
