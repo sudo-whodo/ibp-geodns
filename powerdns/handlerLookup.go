@@ -138,6 +138,24 @@ func handleLookup(params Parameters) Response {
 		}
 	}
 
+	if len(records) == 0 {
+		for _, config := range powerDNSConfigs {
+			if config.Domain == domain {
+				log.Printf("No records found for domain %s, returning default result", domain)
+				defaultRecord := Record{
+					Qtype:    "A",
+					Qname:    domain,
+					Content:  "192.96.202.175",
+					Ttl:      30,
+					Auth:     true,
+					DomainID: params.ZoneID,
+				}
+				records = append(records, defaultRecord)
+				break
+			}
+		}
+	}
+
 	log.Printf("Found records: %+v", records)
 	return Response{Result: records}
 }
