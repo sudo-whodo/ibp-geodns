@@ -66,7 +66,7 @@ func updateSiteStatus(status config.SiteResults) {
 				}
 
 				if result.Success {
-					if member.Results[checkName].OfflineTS.IsZero() || time.Since(member.Results[checkName].OfflineTS).Seconds() >= float64(configData.MinimumOfflineTime) {
+					if member.Results[checkName].OfflineTS.IsZero() {
 						member.Results[checkName] = Result{Success: true}
 						previousStatus["site"][memberName][checkName] = result.Success
 					} else if time.Since(member.Results[checkName].OfflineTS).Seconds() <= float64(configData.MinimumOfflineTime) {
@@ -141,7 +141,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 					}
 
 					if result.Success {
-						if member.Results[checkName].OfflineTS.IsZero() || time.Since(member.Results[checkName].OfflineTS).Seconds() >= float64(configData.MinimumOfflineTime) {
+						if member.Results[checkName].OfflineTS.IsZero() {
 							member.Results[checkName] = Result{Success: true}
 							previousStatus[endpointURL][memberName][checkName] = result.Success
 						} else if time.Since(member.Results[checkName].OfflineTS).Seconds() <= float64(configData.MinimumOfflineTime) {
