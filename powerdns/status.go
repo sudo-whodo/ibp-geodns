@@ -258,7 +258,7 @@ func statusOutput(w http.ResponseWriter, r *http.Request) {
 				for checkName, result := range member.Results {
 					sb.WriteString(fmt.Sprintf("<li>%s: %v", checkName, result.Success))
 					if !result.OfflineTS.IsZero() {
-						sb.WriteString(fmt.Sprintf(", %s", result.OfflineTS))
+						sb.WriteString(fmt.Sprintf(", %s", result.OfflineTS.Format("2006-01-02 15:04")))
 					}
 					sb.WriteString("</li>")
 				}
