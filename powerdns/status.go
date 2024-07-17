@@ -244,9 +244,12 @@ func sendPowerDNSConfigsToMatrix() {
 }
 
 func startConfigReportTicker() {
-	ticker := time.NewTicker(120 * time.Minute)
+	ticker1 := time.NewTicker(5 * time.Minute)
+	ticker2 := time.NewTicker(120 * time.Minute)
+	<-ticker1.C
+	sendPowerDNSConfigsToMatrix()
 	for {
-		<-ticker.C
+		<-ticker2.C
 		sendPowerDNSConfigsToMatrix()
 	}
 }
