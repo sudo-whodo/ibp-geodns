@@ -16,8 +16,8 @@
             "Enabled": 1,
             "CheckType": "site",
             "Timeout": 15,
-            "CheckInterval": 30,
-            "ExtraOptions": {"PingCount": 100, "PingInterval": 20, "PingTimeout": 5192, "PingTTL": 255, "PingSize": 32, "MaxPacketLoss": 5, "MaxLatency": 800}
+            "CheckInterval": 60,
+            "ExtraOptions": {"PingCount": 30, "PingInterval": 100, "PingTimeout": 10000, "PingTTL": 255, "PingSize": 32, "MaxPacketLoss": 5, "MaxLatency": 800}
         },
         "ssl": {
             "Enabled": 0,
