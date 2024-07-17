@@ -229,11 +229,9 @@ func logStatusChange(changeType, memberName, checkName string, prevSuccess, newS
 func statusOutput(w http.ResponseWriter, r *http.Request) {
 	var sb strings.Builder
 	sb.WriteString("<html><head><style>")
-	sb.WriteString("body { font-family: Arial, sans-serif; }")
-	sb.WriteString("h2 { color: #2c3e50; }")
+	sb.WriteString("body { font-family: Arial, sans-serif; } h2, h3 { color: #2c3e50; }")
 	sb.WriteString("table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }")
-	sb.WriteString("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }")
-	sb.WriteString("th { background-color: #f2f2f2; }")
+	sb.WriteString("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; } th { background-color: #f2f2f2; }")
 	sb.WriteString("</style></head><body>")
 
 	sb.WriteString(fmt.Sprintf("<h2>Server: %s</h2>", configData.ServerName))
