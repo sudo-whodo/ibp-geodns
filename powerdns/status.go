@@ -90,7 +90,9 @@ func updateSiteStatus(status config.SiteResults) {
 				}
 
 				for i := range powerDNSConfigs {
-					powerDNSConfigs[i].Members[memberName] = member
+					if _, memberExists := powerDNSConfigs[i].Members[memberName]; memberExists {
+						powerDNSConfigs[i].Members[memberName] = member
+					}
 				}
 			} else {
 				if !result.Success {
@@ -166,7 +168,9 @@ func updateEndpointStatus(status config.EndpointResults) {
 
 					for j := range powerDNSConfigs {
 						if powerDNSConfigs[j].Domain == endpointURL {
-							powerDNSConfigs[j].Members[memberName] = member
+							if _, memberExists := powerDNSConfigs[j].Members[memberName]; memberExists {
+								powerDNSConfigs[j].Members[memberName] = member
+							}
 						}
 					}
 				} else {
