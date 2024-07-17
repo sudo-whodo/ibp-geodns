@@ -228,34 +228,31 @@ func logStatusChange(changeType, memberName, checkName string, prevSuccess, newS
 
 func statusOutput(w http.ResponseWriter, r *http.Request) {
 	var sb strings.Builder
-	sb.WriteString("<html><head><style>")
-	sb.WriteString("body { font-family: Arial, sans-serif; } h2, h3 { color: #2c3e50; }")
-	sb.WriteString("table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }")
-	sb.WriteString("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; } th { background-color: #f2f2f2; }")
-	sb.WriteString("</style></head><body>")
+	sb.WriteString(`<html><head><style>
+		body { font-family: Arial, sans-serif; font-size: 12px; }
+		h2, h3 { color: #2c3e50; margin: 0; padding: 0; }
+		table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+		th, td { border: 1px solid #ddd; padding: 4px; text-align: left; font-size: 12px; }
+		th { background-color: #f2f2f2; }
+		ul { margin: 0; padding-left: 20px; }
+		li { margin: 0; padding: 0; }
+	</style></head><body>`)
 
 	sb.WriteString(fmt.Sprintf("<h2>Server: %s</h2>", configData.ServerName))
 	for _, config := range powerDNSConfigs {
 		sb.WriteString(fmt.Sprintf("<h3>Domain: %s</h3>", config.Domain))
-		sb.WriteString("<table>")
-		sb.WriteString("<tr><th>Member</th><th>IPv4</th><th>IPv6</th><th>Latitude</th><th>Longitude</th><th>Results</th></tr>")
+		sb.WriteString("<table><tr><th>Member</th><th>IPv4</th><th>IPv6</th><th>Lat</th><th>Lon</th><th>Results</th></tr>")
 		for memberName, member := range config.Members {
 			sb.WriteString("<tr>")
-			sb.WriteString(fmt.Sprintf("<td>%s</td>", memberName))
-			sb.WriteString(fmt.Sprintf("<td>%s</td>", member.IPv4))
-			sb.WriteString(fmt.Sprintf("<td>%s</td>", member.IPv6))
-			sb.WriteString(fmt.Sprintf("<td>%f</td>", member.Latitude))
-			sb.WriteString(fmt.Sprintf("<td>%f</td>", member.Longitude))
-			sb.WriteString("<td><ul>")
+			sb.WriteString(fmt.Sprintf("<td>%s</td><td>%s</td><td>%s</td><td>%.2f</td><td>%.2f</td><td><ul>", memberName, member.IPv4, member.IPv6, member.Latitude, member.Longitude))
 			for checkName, result := range member.Results {
-				sb.WriteString(fmt.Sprintf("<li>%s: Success: %v", checkName, result.Success))
+				sb.WriteString(fmt.Sprintf("<li>%s: %v", checkName, result.Success))
 				if !result.OfflineTS.IsZero() {
-					sb.WriteString(fmt.Sprintf(", OfflineTS: %s", result.OfflineTS))
+					sb.WriteString(fmt.Sprintf(", %s", result.OfflineTS))
 				}
 				sb.WriteString("</li>")
 			}
-			sb.WriteString("</ul></td>")
-			sb.WriteString("</tr>")
+			sb.WriteString("</ul></td></tr>")
 		}
 		sb.WriteString("</table>")
 	}
