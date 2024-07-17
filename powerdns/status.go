@@ -227,6 +227,7 @@ func logStatusChange(changeType, memberName, checkName string, prevSuccess, newS
 
 func formatPowerDNSConfigs() string {
 	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("<b>Server: %s</b><br>", configData.ServerName))
 	for _, config := range powerDNSConfigs {
 		sb.WriteString(fmt.Sprintf("<b>Domain: %s</b><br>", config.Domain))
 		for memberName, member := range config.Members {
