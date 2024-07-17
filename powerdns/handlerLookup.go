@@ -14,6 +14,7 @@ func handleLookup(params Parameters) Response {
 	domain := strings.TrimSuffix(params.Qname, ".")
 	log.Printf("Looking up domain: %s, type: %s", domain, params.Qtype)
 
+	// Check for ACME challenge records
 	if strings.HasPrefix(domain, "_acme-challenge.") {
 		acmeRecords, exists := staticEntries[domain]
 		if exists && len(acmeRecords) > 0 {
@@ -38,6 +39,7 @@ func handleLookup(params Parameters) Response {
 		}
 	}
 
+	// Check for static entries
 	if records, exists := staticEntries[domain]; exists {
 		staticRecords := []Record{}
 		for _, record := range records {
@@ -46,13 +48,14 @@ func handleLookup(params Parameters) Response {
 			}
 		}
 		if len(staticRecords) > 0 {
-			log.Printf("Found static records for domain %s: %+v", domain, staticRecords) // Add this line
+			// log.Printf("Found static records for domain %s: %+v", domain, staticRecords)
 			return Response{Result: staticRecords}
 		}
 	}
 
 	records := []Record{}
 
+	// Handle SOA queries
 	if params.Qtype == "SOA" {
 		parts := strings.Split(domain, ".")
 		if len(parts) > 1 {
@@ -62,7 +65,7 @@ func handleLookup(params Parameters) Response {
 				soaRecord := Record{
 					Qtype:    "SOA",
 					Qname:    topLevelDomain,
-					Content:  fmt.Sprintf("ns1.%s. hostmaster.%s. %d 3600 600 1209600 3600", topLevelDomain, topLevelDomain, currentUnixTimestamp),
+					Content:  fmt.Sprintf("dns-01.%s. hostmaster.%s. %d 3600 600 1209600 3600", topLevelDomain, topLevelDomain, currentUnixTimestamp),
 					Ttl:      3600,
 					Auth:     true,
 					DomainID: params.ZoneID,
@@ -82,6 +85,7 @@ func handleLookup(params Parameters) Response {
 	clientIP := params.Remote
 	clientLat, clientLon, err := getClientCoordinates(clientIP)
 	if err != nil {
+		log.Printf("Failed to get client coordinates for IP %s: %v", clientIP, err)
 		return Response{Result: []Record{}}
 	}
 

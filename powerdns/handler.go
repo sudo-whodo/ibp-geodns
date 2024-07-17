@@ -33,7 +33,7 @@ func dnsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Sending response: %+v\n", res)
+	//log.Printf("Sending response: %+v\n", res)
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(res)
