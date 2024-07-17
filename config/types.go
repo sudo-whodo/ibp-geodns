@@ -14,6 +14,7 @@ type Config struct {
 	StaticDNSConfigUrl string                 `json:"StaticDNSConfigUrl"`
 	MembersConfigUrl   string                 `json:"MembersConfigUrl"`
 	ServicesConfigUrl  string                 `json:"ServicesConfigUrl"`
+	MinimumOfflineTime int                    `json:"MinimumOfflineTime"`
 	Matrix             *Matrix                `json:"Matrix"`
 	Checks             map[string]CheckConfig `json:"Checks"`
 }

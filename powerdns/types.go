@@ -1,5 +1,7 @@
 package powerdns
 
+import "time"
+
 type Record struct {
 	Qtype    string `json:"qtype"`
 	Qname    string `json:"qname"`
@@ -24,7 +26,8 @@ type Member struct {
 }
 
 type Result struct {
-	Success bool `json:"success"`
+	Success   bool      `json:"success"`
+	OfflineTS time.Time `json:"offline_ts,omitempty"`
 }
 
 type Request struct {
