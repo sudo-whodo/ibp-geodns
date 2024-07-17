@@ -27,12 +27,12 @@ type PingData struct {
 func PingCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
 	checkName := "ping"
 
-	pingCount := getIntOption(options.ExtraOptions, "PingCount", 10)
-	pingInterval := getIntOption(options.ExtraOptions, "PingInterval", 100)
-	pingTimeout := getIntOption(options.ExtraOptions, "PingTimeout", 2000)
-	pingTTL := getIntOption(options.ExtraOptions, "PingTTL", 64)
-	pingSize := getIntOption(options.ExtraOptions, "PingSize", 24)
-	maxPacketLoss := getIntOption(options.ExtraOptions, "MaxPacketLoss", 20)
+	pingCount := getIntOption(options.ExtraOptions, "PingCount", 100)
+	pingInterval := getIntOption(options.ExtraOptions, "PingInterval", 20)
+	pingTimeout := getIntOption(options.ExtraOptions, "PingTimeout", 4096)
+	pingTTL := getIntOption(options.ExtraOptions, "PingTTL", 255)
+	pingSize := getIntOption(options.ExtraOptions, "PingSize", 32)
+	maxPacketLoss := getIntOption(options.ExtraOptions, "MaxPacketLoss", 5)
 	maxLatency := getIntOption(options.ExtraOptions, "MaxLatency", 800)
 
 	pinger, err := ping.NewPinger(member.IPv4Address)
