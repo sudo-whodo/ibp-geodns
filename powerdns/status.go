@@ -83,10 +83,10 @@ func updateSiteStatus(status config.SiteResults) {
 					powerDNSConfigs[i].Members[memberName] = member
 				}
 				if !result.Success {
-					sendMatrixMessage(fmt.Sprintf("<b>Removing member: %s from all rotations</b><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> true -> false</i><BR><b>Result Data:</b> %v", memberName, configData.ServerName, checkName, result.CheckData))
+					sendMatrixMessage(fmt.Sprintf("<b>Removing member</b> <i>%s</i> <b>from all rotations</b><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> true -> false</i><BR><b>Result Data:</b> %v", memberName, configData.ServerName, checkName, result.CheckData))
 					logStatusChange("Site Status Change", memberName, checkName, true, false, result.CheckData)
 				} else if !member.Results[checkName].OfflineTS.IsZero() {
-					sendMatrixMessage(fmt.Sprintf("<b>Adding member: %s to all rotations</b><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", memberName, configData.ServerName, checkName, result.CheckData))
+					sendMatrixMessage(fmt.Sprintf("<b>Adding member</b> <i>%s</i> <b>to all rotations</b><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", memberName, configData.ServerName, checkName, result.CheckData))
 					logStatusChange("Site Status Change", memberName, checkName, false, true, result.CheckData)
 				}
 			} else {
@@ -157,10 +157,10 @@ func updateEndpointStatus(status config.EndpointResults) {
 						}
 					}
 					if !result.Success {
-						sendMatrixMessage(fmt.Sprintf("<b>Removing member: %s from endpoint: %s</b><br><i><b>Server:</b> %s</i><i><b>Check %s:</b> true -> false</i><BR><b>Result Data:</b> %v", memberName, endpointURL, configData.ServerName, checkName, result.CheckData))
+						sendMatrixMessage(fmt.Sprintf("<b>Removing member</b> <i>%s</i> <b>from endpoint</b> <i>%s</i><br><i><b>Server:</b> %s</i><i><b>Check %s:</b> true -> false</i><BR><b>Result Data:</b> %v", memberName, endpointURL, configData.ServerName, checkName, result.CheckData))
 						logStatusChange("EndPoint Status Change", memberName, checkName, true, false, result.CheckData)
 					} else if !member.Results[checkName].OfflineTS.IsZero() {
-						sendMatrixMessage(fmt.Sprintf("<b>Removing member: %s from endpoint: %s</b><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", memberName, endpointURL, configData.ServerName, checkName, result.CheckData))
+						sendMatrixMessage(fmt.Sprintf("<b>Removing member</b> <i>%s</i> <b>from endpoint</b> <i>%s</i><br><i><b>Server:</b> %s</i><br><i><b>Check %s:</b> false -> true</i><BR><b>Result Data:</b> %v", memberName, endpointURL, configData.ServerName, checkName, result.CheckData))
 						logStatusChange("EndPoint Status Change", memberName, checkName, false, true, result.CheckData)
 					}
 				} else {
