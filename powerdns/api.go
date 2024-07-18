@@ -51,8 +51,6 @@ func enableMember(req ApiRequest) Response {
 		}
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
 	memberName := req.Details
 	success := 0
 
@@ -84,8 +82,6 @@ func disableMember(req ApiRequest) Response {
 		}
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
 	memberName := req.Details
 	success := 0
 
@@ -107,8 +103,6 @@ func disableMember(req ApiRequest) Response {
 }
 
 func listMembers() Response {
-	mu.Lock()
-	defer mu.Unlock()
 	uniqueMembersMap := make(map[string]Member)
 
 	for _, dnsConfig := range powerDNSConfigs {
@@ -133,8 +127,6 @@ func listMembers() Response {
 }
 
 func status() Response {
-	mu.Lock()
-	defer mu.Unlock()
 	sort.SliceStable(powerDNSConfigs, func(i, j int) bool {
 		return powerDNSConfigs[i].Domain < powerDNSConfigs[j].Domain
 	})

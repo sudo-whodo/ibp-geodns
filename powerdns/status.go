@@ -221,9 +221,6 @@ func logStatusChange(changeType, memberName, checkName string, prevSuccess, newS
 }
 
 func statusOutput(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	sort.SliceStable(powerDNSConfigs, func(i, j int) bool {
 		return powerDNSConfigs[i].Domain < powerDNSConfigs[j].Domain
 	})
