@@ -100,14 +100,13 @@ func handleLookup(params Parameters) Response {
 				}
 
 				// Member has invalid IPv4 address
-				if isValidIP(member.IPv4) {
+				if !isValidIP(member.IPv4) {
 					break
 				}
 
 				// Does member have failed checks
 				for _, result := range member.Results {
 					if !result.Success {
-						success = false
 						break
 					}
 				}
