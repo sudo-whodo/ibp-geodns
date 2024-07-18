@@ -31,7 +31,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//log.Printf("Sending response: %+v\n", res)
+	// log.Printf("Sending response: %+v\n", res)
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(res)
@@ -41,11 +41,10 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func enableMember(req ApiRequest) Response {
-	if authValue, ok := configData.AuthKey[req.Details]; !ok || req.AuthKey != authValue {
-		return Response{
-			Result: "Unauthorized access",
-		}
-	} else if authValue, ok := configData.AuthKey["root"]; !ok || req.AuthKey != authValue {
+	authValue := configData.AuthKey[req.Details]
+	rootAuthValue := configData.AuthKey["root"]
+
+	if (req.AuthKey != authValue) && (req.AuthKey != rootAuthValue) {
 		return Response{
 			Result: "Unauthorized access",
 		}
@@ -72,11 +71,10 @@ func enableMember(req ApiRequest) Response {
 }
 
 func disableMember(req ApiRequest) Response {
-	if authValue, ok := configData.AuthKey[req.Details]; !ok || req.AuthKey != authValue {
-		return Response{
-			Result: "Unauthorized access",
-		}
-	} else if authValue, ok := configData.AuthKey["root"]; !ok || req.AuthKey != authValue {
+	authValue := configData.AuthKey[req.Details]
+	rootAuthValue := configData.AuthKey["root"]
+
+	if (req.AuthKey != authValue) && (req.AuthKey != rootAuthValue) {
 		return Response{
 			Result: "Unauthorized access",
 		}

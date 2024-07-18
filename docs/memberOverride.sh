@@ -1,8 +1,10 @@
 #!/bin/bash
+# This requires JQ and Curl installed on the local server
 
 # Configuration
 AUTH_KEY="your_auth_key_here"
-DETAILS="Stakeplus"
+# Membername must match member name (stored in key) here: https://github.com/ibp-network/config/blob/main/members_professional.json
+DETAILS="Membername"
 SERVERS=("http://dns-01.dotters.network:8080/api" "http://dns-02.dotters.network:8080/api" "http://dns-03.dotters.network:8080/api")
 
 # Function to send the request
