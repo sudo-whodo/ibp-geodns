@@ -41,9 +41,6 @@ func updateMemberStatus() {
 }
 
 func updateSiteStatus(status config.SiteResults) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	// log.Printf("Updating site status: %+v", status)
 
 	for memberName, checks := range status.Members {
@@ -114,9 +111,6 @@ func updateSiteStatus(status config.SiteResults) {
 }
 
 func updateEndpointStatus(status config.EndpointResults) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	// log.Printf("Updating endpoint status: %+v", status)
 
 	for endpointURL, members := range status.Endpoint {
@@ -194,8 +188,6 @@ func updateEndpointStatus(status config.EndpointResults) {
 }
 
 func getMember(memberName string) (Member, bool) {
-	mu.RLock()
-	defer mu.RUnlock()
 	for _, config := range powerDNSConfigs {
 		if member, exists := config.Members[memberName]; exists {
 			if member.Results == nil {
