@@ -194,6 +194,8 @@ func updateEndpointStatus(status config.EndpointResults) {
 }
 
 func getMember(memberName string) (Member, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
 	for _, config := range powerDNSConfigs {
 		if member, exists := config.Members[memberName]; exists {
 			if member.Results == nil {

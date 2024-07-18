@@ -41,7 +41,11 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func enableMember(req ApiRequest) Response {
-	if req.AuthKey != configData.AuthKey {
+	if authValue, ok := configData.AuthKey[req.Details]; !ok || req.AuthKey != authValue {
+		return Response{
+			Result: "Unauthorized access",
+		}
+	} else if authValue, ok := configData.AuthKey["root"]; !ok || req.AuthKey != authValue {
 		return Response{
 			Result: "Unauthorized access",
 		}
@@ -70,7 +74,11 @@ func enableMember(req ApiRequest) Response {
 }
 
 func disableMember(req ApiRequest) Response {
-	if req.AuthKey != configData.AuthKey {
+	if authValue, ok := configData.AuthKey[req.Details]; !ok || req.AuthKey != authValue {
+		return Response{
+			Result: "Unauthorized access",
+		}
+	} else if authValue, ok := configData.AuthKey["root"]; !ok || req.AuthKey != authValue {
 		return Response{
 			Result: "Unauthorized access",
 		}

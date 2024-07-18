@@ -5,7 +5,10 @@
     "MembersConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/members_professional.json",
     "ServicesConfigUrl": "https://raw.githubusercontent.com/ibp-network/config/main/services_rpc.json",
     "MinimumOfflineTime": 3600,
-    "AuthKey": "testingkey",
+    "AuthKey": {
+        "rootkey": "",
+        "membername": ""  
+    },
     "Matrix": {
         "HomeServerURL": "https://matrix.org",
         "Username": "ibpdns",
