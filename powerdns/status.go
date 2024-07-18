@@ -255,7 +255,7 @@ func statusOutput(w http.ResponseWriter, r *http.Request) {
 		for i := col * half; i < (col+1)*half && i < len(powerDNSConfigs); i++ {
 			config := powerDNSConfigs[i]
 			sb.WriteString(fmt.Sprintf("<h3>Domain: %s</h3>", config.Domain))
-			sb.WriteString("<table><tr><th>Member</th><th>IPv4</th><th>IPv6</th><th>Lat</th><th>Lon</th><th>Results</th></tr>")
+			sb.WriteString("<table><tr><th>Member</th><th>Override</th><th>IPv4</th><th>IPv6</th><th>Lat</th><th>Lon</th><th>Results</th></tr>")
 			memberNames := make([]string, 0, len(config.Members))
 			for memberName := range config.Members {
 				memberNames = append(memberNames, memberName)
@@ -264,7 +264,7 @@ func statusOutput(w http.ResponseWriter, r *http.Request) {
 			for _, memberName := range memberNames {
 				member := config.Members[memberName]
 				sb.WriteString("<tr>")
-				sb.WriteString(fmt.Sprintf("<td>%s</td><td>%s</td><td>%s</td><td>%.2f</td><td>%.2f</td><td><ul>", memberName, member.IPv4, member.IPv6, member.Latitude, member.Longitude))
+				sb.WriteString(fmt.Sprintf("<td>%s</td><td> %t </td><td>%s</td><td>%s</td><td>%.2f</td><td>%.2f</td><td><ul>", memberName, member.Override, member.IPv4, member.IPv6, member.Latitude, member.Longitude))
 				for checkName, result := range member.Results {
 					sb.WriteString(fmt.Sprintf("<li>%s: %v", checkName, result.Success))
 					if !result.OfflineTS.IsZero() {
