@@ -96,17 +96,18 @@ func handleLookup(params Parameters) Response {
 
 				// Member override is turned on, ignore member.
 				if member.Override {
-					break
+					success = false
 				}
 
 				// Member has invalid IPv4 address
 				if !isValidIP(member.IPv4) {
-					break
+					success = false
 				}
 
 				// Does member have failed checks
 				for _, result := range member.Results {
 					if !result.Success {
+						success = false
 						break
 					}
 				}
