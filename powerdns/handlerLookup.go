@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 func handleLookup(params Parameters) Response {
 	domain := strings.ToLower(strings.TrimSuffix(params.Qname, "."))
-	log.Printf("Looking up domain: %s, type: %s", domain, params.Qtype)
+	// log.Printf("Looking up domain: %s, type: %s", domain, params.Qtype)
 
 	// Check for ACME challenge records
 	if strings.HasPrefix(domain, "_acme-challenge.") {
@@ -92,12 +93,26 @@ func handleLookup(params Parameters) Response {
 		if config.Domain == domain {
 			for _, member := range config.Members {
 				success := true
+
+				// Member override is turned on, ignore member.
+				if member.Override {
+					break
+				}
+
+				// Member has invalid IPv4 address
+				if isValidIP(member.IPv4) {
+					break
+				}
+
+				// Does member have failed checks
 				for _, result := range member.Results {
 					if !result.Success {
 						success = false
 						break
 					}
 				}
+
+				// Determine distance
 				if success {
 					dist := distance(clientLat, clientLon, member.Latitude, member.Longitude)
 					if dist < minDistance {
@@ -107,6 +122,7 @@ func handleLookup(params Parameters) Response {
 				}
 			}
 
+			// Deliver member IPv4 and IPv6 addresses
 			if closestMember.MemberName != "" {
 				if params.Qtype == "A" || params.Qtype == "ANY" {
 					if closestMember.IPv4 != "" {
@@ -137,6 +153,7 @@ func handleLookup(params Parameters) Response {
 		}
 	}
 
+	// Default record if requested domain is valid (Let's be sure to not return any empty results)
 	if len(records) == 0 {
 		for _, config := range powerDNSConfigs {
 			if config.Domain == domain {
@@ -175,4 +192,8 @@ func fetchACMEChallenge(url string) (string, error) {
 
 	content := strings.TrimSpace(string(body))
 	return content, nil
+}
+
+func isValidIP(ip string) bool {
+	return net.ParseIP(ip) != nil
 }

@@ -2,7 +2,6 @@ package powerdns
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -15,7 +14,7 @@ func dnsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Received request: %+v\n", req)
+	// log.Printf("Received request: %+v\n", req)
 
 	var res Response
 
@@ -33,7 +32,7 @@ func dnsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//log.Printf("Sending response: %+v\n", res)
+	// log.Printf("Sending response: %+v\n", res)
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(res)

@@ -45,6 +45,7 @@ func Init(configs []DNS, resultsCh chan string, config *config.Config) {
 	go updateMemberStatus()
 
 	http.HandleFunc("/dns", dnsHandler)
+	http.HandleFunc("/api", apiHandler)
 	http.HandleFunc("/status", statusOutput)
 	log.Println("Starting PowerDNS server on :8080")
 	go http.ListenAndServe(":8080", nil)

@@ -22,12 +22,19 @@ type Member struct {
 	IPv6       string            `json:"ipv6"`
 	Latitude   float64           `json:"latitude"`
 	Longitude  float64           `json:"longitude"`
+	Override   bool              `json:"override"`
 	Results    map[string]Result `json:"results"`
 }
 
 type Result struct {
 	Success   bool      `json:"success"`
 	OfflineTS time.Time `json:"offline_ts,omitempty"`
+}
+
+type ApiRequest struct {
+	Method  string `json:"method"`
+	Details string `json:"details"`
+	AuthKey string `json:"authkey"`
 }
 
 type Request struct {
