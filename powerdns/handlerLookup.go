@@ -168,8 +168,8 @@ func handleLookup(params Parameters) Response {
 						DomainID: params.ZoneID,
 					}
 					records = append(records, defaultRecord)
-					break
 				}
+				break
 			}
 		}
 	}
