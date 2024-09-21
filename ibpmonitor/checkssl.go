@@ -2,87 +2,160 @@ package ibpmonitor
 
 import (
 	"crypto/tls"
-	"fmt"
+	"encoding/json"
 	"ibp-geodns/config"
+	"log"
+	"net"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
+const MaxConcurrentChecks = 10
+
 type SslResult struct {
-	CheckName       string
-	ServerName      string
-	CheckType       string
-	Success         bool
-	ExpiryTimestamp int64
-	DaysUntilExpiry int
-	Valid           bool
-	Error           string
+	CheckName   string  `json:"checkname"`
+	MemberName  string  `json:"membername"`
+	EndpointURL string  `json:"endpointurl"`
+	ResultType  string  `json:"resulttype"`
+	Success     bool    `json:"success"`
+	Error       string  `json:"error"`
+	Data        SslData `json:"data"`
 }
 
-func SslCheck(member Member, config config.CheckConfig, resultsCollectorChannel chan string) {
+type SslData struct {
+	ExpiryTimestamp int64 `json:"expirytimestamp"`
+	DaysUntilExpiry int   `json:"daysuntilexpiry"`
+}
+
+func SslCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
+
 	checkName := "ssl"
-	done := make(chan SslResult, 2)
+	connectTimeout := getIntOption(options.ExtraOptions, "ConnectTimeout", 4)
+	uniqueHostnames := make(map[string]bool)
 
-	u, err := url.Parse(member.IPv4Address)
-	if err != nil {
-		err := fmt.Sprintf("Unable to parse wss endpoint: %v", err)
-		done <- SslResult{CheckName: checkName, ServerName: member.MemberName, Success: false, Error: err}
-		return
-	}
-	hostname := u.Hostname()
+	for _, service := range member.Services {
+		for _, endpoint := range service.Endpoints {
+			endpointForParsing := strings.Replace(endpoint, "wss://", "https://", 1)
 
-	conn, err := tls.Dial("tcp", member.IPv4Address+":443", &tls.Config{
-		ServerName:         hostname,
-		InsecureSkipVerify: true,
-	})
-	if err != nil {
-		err := fmt.Sprintf("Failed to connect to endpoint: %v", err)
-		done <- SslResult{CheckName: checkName, ServerName: member.MemberName, Success: false, Error: err}
-		return
-	}
-	defer conn.Close()
+			u, err := url.Parse(endpointForParsing)
+			if err != nil {
+				//log.Printf("Error parsing endpoint '%s' for member %s: %v", endpoint, member.MemberName, err)
+				continue
+			}
 
-	var isRpcUrlValid bool
-	var certExpired bool
-	var expiryTimestamp int64
-	var daysUntilExpiry int
-	var success bool
-
-	// Iterate through each certificate
-	for _, cert := range conn.ConnectionState().PeerCertificates {
-		for _, domain := range cert.DNSNames {
-			if strings.HasPrefix(domain, "*.") {
-				rootDomain := strings.TrimPrefix(domain, "*.")
-				if strings.HasSuffix(hostname, rootDomain) && strings.Count(hostname, ".") == strings.Count(rootDomain, ".")+1 {
-					isRpcUrlValid = true
-				}
-			} else if domain == hostname {
-				isRpcUrlValid = true
+			hostname := u.Hostname()
+			if hostname != "" {
+				//log.Printf("Extracted hostname '%s' from endpoint '%s'", hostname, endpoint)
+				uniqueHostnames[hostname] = true
 			}
 		}
-
-		if isRpcUrlValid {
-			expiryTimestamp = cert.NotAfter.Unix()
-			daysUntilExpiry = int(time.Until(cert.NotAfter).Hours() / 24)
-			certExpired = time.Now().After(cert.NotAfter)
-			break
-		}
 	}
 
-	if !certExpired && isRpcUrlValid {
-		success = true
+	if len(uniqueHostnames) == 0 {
+		//log.Printf("No valid endpoints found for member %s; skipping SSL check.", member.MemberName)
+		return
 	}
 
-	result := SslResult{
-		CheckName:       checkName,
-		ServerName:      member.MemberName,
-		Success:         success,
-		ExpiryTimestamp: expiryTimestamp,
-		DaysUntilExpiry: daysUntilExpiry,
+	var wg sync.WaitGroup
+	semaphoreChan := make(chan struct{}, MaxConcurrentChecks)
+	delayBetweenChecks := 10 * time.Millisecond
+
+	for hostname := range uniqueHostnames {
+		time.Sleep(delayBetweenChecks)
+
+		wg.Add(1)
+		go func(hostname string) {
+			defer wg.Done()
+
+			semaphoreChan <- struct{}{}
+			defer func() { <-semaphoreChan }()
+
+			ipAddress := member.IPv4Address
+			tcpConn, err := net.DialTimeout("tcp", net.JoinHostPort(ipAddress, "443"), time.Duration(connectTimeout)*time.Second)
+			if err != nil {
+				log.Printf("SSL check failed for member %s, Hostname %s: TCP Connection error", member.MemberName, hostname)
+
+				result := SslResult{
+					CheckName:   checkName,
+					MemberName:  member.MemberName,
+					EndpointURL: hostname,
+					ResultType:  "endpoint",
+					Success:     false,
+					Error:       "TCP connection error",
+					Data:        SslData{},
+				}
+				resultJSON, _ := json.Marshal(result)
+				resultsCollectorChannel <- string(resultJSON)
+				return
+			}
+
+			tlsConn := tls.Client(tcpConn, &tls.Config{
+				ServerName:         hostname,
+				InsecureSkipVerify: false,
+			})
+
+			err = tlsConn.Handshake()
+			if err != nil {
+				log.Printf("SSL check failed for member %s, Hostname %s: TLS handshake failed", member.MemberName, hostname)
+				tlsConn.Close()
+
+				result := SslResult{
+					CheckName:   checkName,
+					MemberName:  member.MemberName,
+					EndpointURL: hostname,
+					ResultType:  "endpoint",
+					Success:     false,
+					Error:       "TLS handshake failed",
+					Data:        SslData{},
+				}
+				resultJSON, _ := json.Marshal(result)
+				resultsCollectorChannel <- string(resultJSON)
+				return
+			}
+
+			certs := tlsConn.ConnectionState().PeerCertificates
+
+			cert := certs[0]
+			expiryTimestamp := cert.NotAfter.Unix()
+			daysUntilExpiry := int(time.Until(cert.NotAfter).Hours() / 24)
+
+			var success bool
+			var errortext string
+
+			if daysUntilExpiry < 5 {
+				success = false
+				errortext = "Less than 5 days until expiry"
+			} else {
+				success = true
+				errortext = ""
+			}
+
+			if !success {
+				log.Printf("SSL check failed for member %s, Hostname %s: Certificate expires in %d days", member.MemberName, hostname, daysUntilExpiry)
+			}
+
+			result := SslResult{
+				CheckName:   checkName,
+				MemberName:  member.MemberName,
+				EndpointURL: hostname,
+				ResultType:  "endpoint",
+				Success:     success,
+				Error:       errortext,
+				Data: SslData{
+					ExpiryTimestamp: expiryTimestamp,
+					DaysUntilExpiry: daysUntilExpiry,
+				},
+			}
+			resultJSON, _ := json.Marshal(result)
+			resultsCollectorChannel <- string(resultJSON)
+
+			tlsConn.Close()
+		}(hostname)
 	}
 
-	done <- result
+	wg.Wait()
 }
 
 func init() {

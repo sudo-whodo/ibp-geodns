@@ -28,6 +28,7 @@ type Member struct {
 
 type Result struct {
 	Success   bool      `json:"success"`
+	Data      string    `json:"checkError"`
 	OfflineTS time.Time `json:"offline_ts,omitempty"`
 }
 

@@ -10,6 +10,7 @@
         "membername": ""  
     },
     "Matrix": {
+        "Enabled": 0,
         "HomeServerURL": "https://matrix.org",
         "Username": "ibpdns",
         "Password": "",
@@ -24,18 +25,18 @@
             "ExtraOptions": {"PingCount": 30, "PingInterval": 100, "PingTimeout": 10000, "PingTTL": 255, "PingSize": 32, "MaxPacketLoss": 5, "MaxLatency": 800}
         },
         "ssl": {
-            "Enabled": 0,
+            "Enabled": 1,
             "CheckType": "endpoint",
-            "Timeout": 4,
-            "CheckInterval": 600,
-            "ExtraOptions": {}
+            "Timeout": 15,
+            "CheckInterval": 3600,
+            "ExtraOptions": {"ConnectTimeout": 4}
         },
         "wss": {
-            "Enabled": 0,
+            "Enabled": 1,
             "CheckType": "endpoint",
-            "Timeout": 4,
-            "CheckInterval": 120,
-            "ExtraOptions": {}
+            "Timeout": 30,
+            "CheckInterval": 3600,
+            "ExtraOptions": {"ConnectTimeout": 4}
         }
     }
 }

@@ -81,7 +81,7 @@ func main() {
 					endpoints = append(endpoints, url.URL)
 				}
 				service := ibpmonitor.Service{
-					ServiceName: serviceName,
+					ServiceName: serviceEndpoint.ExpectedNetwork,
 					Endpoints:   endpoints,
 				}
 				member.Services = append(member.Services, service)

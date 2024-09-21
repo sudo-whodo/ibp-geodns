@@ -105,10 +105,26 @@ func handleLookup(params Parameters) Response {
 				}
 
 				// Does member have failed checks
-				for _, result := range member.Results {
-					if !result.Success {
-						success = false
-						break
+				for checkName, result := range member.Results {
+					if strings.Contains(checkName, "::") {
+						// Endpoint-specific check
+						parts := strings.SplitN(checkName, "::", 2)
+						domainForCheck := parts[0]
+						if domainForCheck == domain {
+							// This check is relevant to the current domain
+							if !result.Success {
+								success = false
+								log.Printf("Member '%s' has failed endpoint check '%s': %+v", member.MemberName, checkName, result)
+								break
+							}
+						}
+					} else {
+						// Site-wide check
+						if !result.Success {
+							success = false
+							log.Printf("Member '%s' has failed site-wide check '%s': %+v", member.MemberName, checkName, result)
+							break
+						}
 					}
 				}
 

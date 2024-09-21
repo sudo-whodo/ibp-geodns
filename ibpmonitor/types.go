@@ -20,8 +20,9 @@ type RpcServer struct {
 type Check func(member Member, options config.CheckConfig, resultsCollectorChannel chan string)
 
 type NodeResults struct {
-	mu     sync.Mutex
-	Checks map[string]interface{}
+	Checks         map[string]interface{}            // For site-wide checks
+	EndpointChecks map[string]map[string]interface{} // For endpoint-specific checks
+	mu             sync.Mutex
 }
 
 type IbpMonitor struct {

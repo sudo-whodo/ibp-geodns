@@ -98,12 +98,13 @@ func ExtractData() (map[string]map[string]Endpoint, map[string]MemberService, ma
 										NetworkName: serviceConfig.Configuration.NetworkName,
 									}
 									endpoint := Endpoint{
-										MemberName:   memberName,
-										IPv4:         member.Service.ServiceIPv4,
-										IPv6:         member.Service.ServiceIPv6,
-										Latitude:     member.Location.Latitude,
-										Longitude:    member.Location.Longitude,
-										OriginalURLs: []OriginalURL{originalURL},
+										MemberName:      memberName,
+										ExpectedNetwork: serviceConfig.Configuration.NetworkName,
+										IPv4:            member.Service.ServiceIPv4,
+										IPv6:            member.Service.ServiceIPv6,
+										Latitude:        member.Location.Latitude,
+										Longitude:       member.Location.Longitude,
+										OriginalURLs:    []OriginalURL{originalURL},
 									}
 									if existing, exists := endpoints[dnsName][memberName]; exists {
 										endpoint.OriginalURLs = append(existing.OriginalURLs, originalURL)
@@ -114,6 +115,7 @@ func ExtractData() (map[string]map[string]Endpoint, map[string]MemberService, ma
 										serviceEndpoints[service] = make(map[string]ServiceEndpoint)
 									}
 									serviceEndpoint := serviceEndpoints[service][memberName]
+									serviceEndpoint.ExpectedNetwork = serviceConfig.Configuration.NetworkName
 									serviceEndpoint.URLs = append(serviceEndpoint.URLs, originalURL)
 									serviceEndpoint.ServiceIPv4s = appendUniqueString(serviceEndpoint.ServiceIPv4s, member.Service.ServiceIPv4)
 									serviceEndpoint.ServiceIPv6s = appendUniqueString(serviceEndpoint.ServiceIPv6s, member.Service.ServiceIPv6)

@@ -21,6 +21,7 @@ type Config struct {
 }
 
 type Matrix struct {
+	Enabled       int    `json:"Enabled"`
 	HomeServerURL string `json:"HomeServerURL"`
 	Username      string `json:"Username"`
 	Password      string `json:"Password"`
@@ -89,12 +90,13 @@ type Service struct {
 }
 
 type Endpoint struct {
-	MemberName   string
-	IPv4         string
-	IPv6         string
-	Latitude     float64
-	Longitude    float64
-	OriginalURLs []OriginalURL
+	MemberName      string
+	IPv4            string
+	IPv6            string
+	ExpectedNetwork string
+	Latitude        float64
+	Longitude       float64
+	OriginalURLs    []OriginalURL
 }
 
 type OriginalURL struct {
@@ -109,8 +111,9 @@ type MemberService struct {
 }
 
 type ServiceEndpoint struct {
-	URLs         []OriginalURL
-	ServiceIPv4s []string
-	ServiceIPv6s []string
-	Domains      []string
+	ExpectedNetwork string
+	URLs            []OriginalURL
+	ServiceIPv4s    []string
+	ServiceIPv6s    []string
+	Domains         []string
 }
