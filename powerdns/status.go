@@ -152,7 +152,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 						if member.Results[compositeKey].OfflineTS.IsZero() {
 							member.Results[compositeKey] = Result{Success: true}
 							previousStatus["endpoint"][memberName][compositeKey] = result.Success
-						} else if time.Since(member.Results[checkName].OfflineTS).Seconds() <= float64(configData.MinimumOfflineTime) {
+						} else if time.Since(member.Results[compositeKey].OfflineTS).Seconds() <= float64(configData.MinimumOfflineTime) {
 							continue
 						}
 
@@ -165,8 +165,8 @@ func updateEndpointStatus(status config.EndpointResults) {
 										"<i><b>Server:</b> %s</i><br>"+
 										"<i><b>Check %s:</b> false -> true</i><br>"+
 										"<b>Result Data:</b> %v",
-									memberName, endpointURL, configData.ServerName, checkName, result.CheckError))
-								logStatusChange("Endpoint Status Change", memberName, checkName, false, true, result.CheckError)
+									memberName, endpointURL, configData.ServerName, compositeKey, result.CheckError))
+								logStatusChange("Endpoint Status Change", memberName, compositeKey, false, true, result.CheckError)
 							}
 						}
 
@@ -185,8 +185,8 @@ func updateEndpointStatus(status config.EndpointResults) {
 									"<i><b>Server:</b> %s</i><br>"+
 									"<i><b>Check %s:</b> true -> false</i><br>"+
 									"<b>Result Data:</b> %v",
-								memberName, endpointURL, configData.ServerName, checkName, result.CheckError))
-							logStatusChange("Endpoint Status Change", memberName, checkName, true, false, result.CheckError)
+								memberName, endpointURL, configData.ServerName, compositeKey, result.CheckError))
+							logStatusChange("Endpoint Status Change", memberName, compositeKey, true, false, result.CheckError)
 						}
 					}
 
