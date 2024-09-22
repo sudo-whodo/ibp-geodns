@@ -3,6 +3,7 @@ package powerdns
 import "strings"
 
 func handleGetDomainKeys(params Parameters) Response {
+
 	mu.RLock()
 	defer mu.RUnlock()
 

@@ -3,6 +3,10 @@ package powerdns
 import "time"
 
 func handleGetDomainInfo(params Parameters) Response {
+
+	mu.RLock()
+	defer mu.RUnlock()
+
 	currentUnixTimestamp := int(time.Now().Unix())
 	for _, config := range powerDNSConfigs {
 		if config.Domain == params.Qname {

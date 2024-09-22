@@ -2,7 +2,7 @@ package powerdns
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math"
 	"net"
@@ -12,6 +12,10 @@ import (
 )
 
 func handleLookup(params Parameters) Response {
+
+	mu.RLock()
+	defer mu.RUnlock()
+
 	domain := strings.ToLower(strings.TrimSuffix(params.Qname, "."))
 	// log.Printf("Looking up domain: %s, type: %s", domain, params.Qtype)
 
@@ -75,9 +79,6 @@ func handleLookup(params Parameters) Response {
 			}
 		}
 	}
-
-	mu.RLock()
-	defer mu.RUnlock()
 
 	var closestMember Member
 	minDistance := math.MaxFloat64
@@ -201,7 +202,7 @@ func fetchACMEChallenge(url string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}

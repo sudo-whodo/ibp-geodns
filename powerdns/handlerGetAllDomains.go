@@ -3,6 +3,10 @@ package powerdns
 import "time"
 
 func handleGetAllDomains() Response {
+
+	mu.RLock()
+	defer mu.RUnlock()
+
 	currentUnixTimestamp := int(time.Now().Unix())
 	domains := []DomainInfo{}
 	for domain := range topLevelDomains {
