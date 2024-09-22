@@ -156,7 +156,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 							continue
 						}
 
-						if !member.Results[checkName].OfflineTS.IsZero() && time.Since(member.Results[checkName].OfflineTS).Seconds() >= float64(configData.MinimumOfflineTime) {
+						if !member.Results[compositeKey].OfflineTS.IsZero() && time.Since(member.Results[compositeKey].OfflineTS).Seconds() >= float64(configData.MinimumOfflineTime) {
 							member.Results[compositeKey] = Result{Success: true}
 
 							if !member.Override {
@@ -177,7 +177,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 							OfflineTS: time.Now(),
 						}
 
-						previousStatus["site"][memberName][checkName] = result.Success
+						previousStatus["endpoint"][memberName][compositeKey] = result.Success
 
 						if !member.Override {
 							sendMatrixMessage(fmt.Sprintf(
@@ -200,7 +200,7 @@ func updateEndpointStatus(status config.EndpointResults) {
 					}
 				} else {
 					// **Even if the status hasn't changed, ensure the member is updated in powerDNSConfigs**
-					if !result.Success && !member.Results[checkName].Success {
+					if !result.Success && !member.Results[compositeKey].Success {
 						member.Results[compositeKey] = Result{
 							Success:   false,
 							Data:      result.CheckError,
