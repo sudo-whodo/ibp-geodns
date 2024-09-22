@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const MaxConcurrentChecks = 10
-
 type SslResult struct {
 	CheckName   string  `json:"checkname"`
 	MemberName  string  `json:"membername"`
@@ -30,6 +28,8 @@ type SslData struct {
 }
 
 func SslCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
+
+	var MaxConcurrentChecks = 20
 
 	checkName := "ssl"
 	connectTimeout := getIntOption(options.ExtraOptions, "ConnectTimeout", 4)

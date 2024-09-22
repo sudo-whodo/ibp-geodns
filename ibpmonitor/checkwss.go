@@ -36,10 +36,11 @@ type JSONRPCRequest struct {
 }
 
 func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
+
+	var MaxConcurrentChecks = 20
 	connectTimeout := getIntOption(options.ExtraOptions, "ConnectTimeout", 4)
 
-	const maxConcurrentChecks = 10
-	sem := semaphore.NewWeighted(int64(maxConcurrentChecks))
+	sem := semaphore.NewWeighted(int64(MaxConcurrentChecks))
 
 	var wg sync.WaitGroup
 
