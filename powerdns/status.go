@@ -424,7 +424,7 @@ func statusOutput(w http.ResponseWriter, r *http.Request) {
 	sb.WriteString(`<option value='all'>All Members</option>`)
 	for _, member := range uniqueMembers {
 		// Set the option value to the raw member name and display the escaped member name
-		sb.WriteString(fmt.Sprintf("<option value='%s'>%s</option>", htmlEscapeAttribute(member), htmlEscape(member)))
+		sb.WriteString(fmt.Sprintf("<option value='%s'>%s</option>", htmlEscape(member), htmlEscape(member)))
 	}
 	sb.WriteString(`</select>`)
 
@@ -473,9 +473,9 @@ func statusOutput(w http.ResponseWriter, r *http.Request) {
 		// Domain header with member counts and arrow
 		sb.WriteString(fmt.Sprintf("<div class='%s' data-domain='%s' data-members='%s' onclick=\"toggleDomain('%s')\">",
 			domainClass,
-			htmlEscapeAttribute(config.Domain),
-			htmlEscapeAttribute(string(memberStatusesJSON)),
-			htmlEscapeAttribute(config.Domain),
+			htmlEscape(config.Domain),
+			htmlEscape(string(memberStatusesJSON)),
+			htmlEscape(config.Domain),
 		))
 		sb.WriteString(fmt.Sprintf("Domain: %s", htmlEscape(config.Domain)))
 		sb.WriteString(fmt.Sprintf("<span class='info'>Members: Total: %d, Offline: %d, Online: %d</span>", totalMembers, offlineMembers, onlineMembers))
@@ -483,7 +483,7 @@ func statusOutput(w http.ResponseWriter, r *http.Request) {
 		sb.WriteString("</div>")
 
 		// Domain content div
-		sb.WriteString(fmt.Sprintf("<div class='domain-content' id='%s-content'>", htmlEscapeAttribute(config.Domain)))
+		sb.WriteString(fmt.Sprintf("<div class='domain-content' id='%s-content'>", htmlEscape(config.Domain)))
 		sb.WriteString("<table>")
 		sb.WriteString("<tr><th class='member'>Member</th><th class='override'>Override</th><th class='ipv4'>IPv4</th><th class='ipv6'>IPv6</th><th class='lat'>Lat</th><th class='lon'>Lon</th><th class='site-results'>Site Results</th><th class='endpoint-results'>Endpoint Results</th></tr>")
 
@@ -698,10 +698,5 @@ func separateResults(domain string, results map[string]Result) (map[string]Resul
 
 // Helper function to escape HTML content
 func htmlEscape(s string) string {
-	return html.EscapeString(s)
-}
-
-// Helper function to escape HTML attribute values
-func htmlEscapeAttribute(s string) string {
 	return html.EscapeString(s)
 }

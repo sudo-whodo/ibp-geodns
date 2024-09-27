@@ -126,16 +126,12 @@ func listMembers() Response {
 }
 
 func status(req ApiRequest) Response {
-	// Step 1: Make a deep copy of powerDNSConfigs
 	filteredConfigs := make([]DNS, len(powerDNSConfigs))
 	for i, dns := range powerDNSConfigs {
-		// Copy the DNS struct
 		filteredConfigs[i].Domain = dns.Domain
 		filteredConfigs[i].Members = make(map[string]Member)
 
-		// Copy each member
 		for memberName, member := range dns.Members {
-			// Create a copy of the Member struct
 			copiedMember := Member{
 				MemberName: member.MemberName,
 				IPv4:       member.IPv4,
@@ -146,64 +142,47 @@ func status(req ApiRequest) Response {
 				Results:    make(map[string]Result),
 			}
 
-			// Copy the Results map
 			for checkKey, check := range member.Results {
 				copiedMember.Results[checkKey] = check
 			}
 
-			// Assign the copied member to the filteredConfigs
 			filteredConfigs[i].Members[memberName] = copiedMember
 		}
 	}
 
-	// Step 2: Check if req.Details contains the member name
 	if req.Details != "" {
 		memberName := req.Details
 		for i := range filteredConfigs {
-			// Check if the member exists in this domain
 			if member, exists := filteredConfigs[i].Members[memberName]; exists {
-				// Retain only the specified member
 				filteredConfigs[i].Members = map[string]Member{
 					memberName: member,
 				}
 			} else {
-				// Member not found in this domain; retain no members
 				filteredConfigs[i].Members = map[string]Member{}
 			}
 		}
 	}
 
-	// Step 3: For each member in filteredConfigs, ensure only relevant checks are included
 	for i := range filteredConfigs {
 		domain := filteredConfigs[i].Domain
 
 		for memberName, member := range filteredConfigs[i].Members {
-			// Create a new Results map
 			filteredResults := make(map[string]Result)
 
-			// Define the expected prefix for checks belonging to the current domain
-			expectedPrefix := domain + "::"
+			expectedPrefix := domain
 
-			// Iterate over each check in the member's Results
 			for checkKey, check := range member.Results {
-				if strings.HasPrefix(checkKey, expectedPrefix) || !strings.Contains(checkKey, "::") {
-					// Include checks specific to the domain or global site checks
+				if strings.HasPrefix(checkKey, expectedPrefix) {
 					filteredResults[checkKey] = check
 				}
-				// Else, exclude the check as it belongs to a different domain
 			}
 
-			// Update the member's Results with the filtered checks
 			member.Results = filteredResults
 
-			// Assign the modified member back to the map
-			mu.Lock()
 			filteredConfigs[i].Members[memberName] = member
-			mu.Unlock()
 		}
 	}
 
-	// Step 4: Prepare the response with the filteredConfigs
 	response := Response{
 		Result: filteredConfigs,
 	}
