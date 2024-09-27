@@ -108,9 +108,16 @@ func handleLookup(params Parameters) Response {
 				// Does member have failed checks
 				for checkName, result := range member.Results {
 					if strings.Contains(checkName, "::") {
-						// Endpoint-specific check
+						var domainForCheck string
+
 						parts := strings.SplitN(checkName, "::", 2)
-						domainForCheck := parts[0]
+
+						if idx := strings.Index(parts[0], "/"); idx != -1 {
+							domainForCheck = parts[0][:idx]
+						} else {
+							domainForCheck = parts[0]
+						}
+
 						if domainForCheck == domain {
 							// This check is relevant to the current domain
 							if !result.Success {

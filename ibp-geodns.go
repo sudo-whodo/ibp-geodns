@@ -59,6 +59,7 @@ func main() {
 				IPv6:       endpoint.IPv6,
 				Latitude:   endpoint.Latitude,
 				Longitude:  endpoint.Longitude,
+				Results:    make(map[string]powerdns.Result),
 			}
 			dnsConfig.Members[memberName] = member
 		}

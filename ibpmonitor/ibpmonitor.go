@@ -7,7 +7,7 @@ import (
 )
 
 func NewIbpMonitor(members []Member, config *config.Config) *IbpMonitor {
-	resultsChannel := make(chan string, 2)
+	resultsChannel := make(chan string, 1024)
 
 	return &IbpMonitor{
 		Members:                 members,
@@ -16,7 +16,7 @@ func NewIbpMonitor(members []Member, config *config.Config) *IbpMonitor {
 		Config:                  config,
 		ResultsChannel:          resultsChannel,
 		NodeResults:             make(map[string]*NodeResults),
-		ResultsCollectorChannel: make(chan string, len(members)*len(config.Checks)+2),
+		ResultsCollectorChannel: make(chan string, len(members)*len(config.Checks)*10),
 	}
 }
 

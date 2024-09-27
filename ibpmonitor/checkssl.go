@@ -60,7 +60,7 @@ func SslCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 
 	var wg sync.WaitGroup
 	semaphoreChan := make(chan struct{}, MaxConcurrentChecks)
-	delayBetweenChecks := 10 * time.Millisecond
+	delayBetweenChecks := 1 * time.Millisecond
 
 	for hostname := range uniqueHostnames {
 		time.Sleep(delayBetweenChecks)

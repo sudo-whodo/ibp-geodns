@@ -38,6 +38,7 @@ type JSONRPCRequest struct {
 func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel chan string) {
 
 	var MaxConcurrentChecks = 20
+	delayBetweenChecks := 1 * time.Millisecond
 	connectTimeout := getIntOption(options.ExtraOptions, "ConnectTimeout", 4)
 
 	sem := semaphore.NewWeighted(int64(MaxConcurrentChecks))
@@ -50,6 +51,8 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 				log.Printf("Failed to acquire semaphore: %v", err)
 				continue
 			}
+
+			time.Sleep(delayBetweenChecks)
 
 			wg.Add(1)
 			go func(service Service, endpoint string) {
@@ -82,7 +85,7 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 				c, _, err := dialer.Dial(reconstructedURL, nil)
 				if err != nil {
 					errMsg := fmt.Sprintf("Failed to connect to WSS endpoint (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
@@ -102,7 +105,7 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 
 				if !sendJSONRPCRequest(c, request) {
 					errMsg := fmt.Sprintf("Failed to send JSON-RPC request to (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
@@ -110,7 +113,7 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 				_, _, err = c.ReadMessage()
 				if err != nil {
 					errMsg := fmt.Sprintf("Failed to read JSON-RPC response from (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
@@ -118,13 +121,13 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 				isFullArchive, err := checkFullArchive(c)
 				if err != nil {
 					errMsg := fmt.Sprintf("Full archive check failed for (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
 				if !isFullArchive {
 					errMsg := fmt.Sprintf("Endpoint is not a full archive node (Member: %s URL: '%s')", member.MemberName, endpoint)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
@@ -132,13 +135,13 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 				isCorrectNetwork, err := checkNetwork(c, service.ServiceName)
 				if err != nil {
 					errMsg := fmt.Sprintf("Network check failed for (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
 				if !isCorrectNetwork {
 					errMsg := fmt.Sprintf("Endpoint is not on the expected network (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
@@ -146,18 +149,18 @@ func WssCheck(member Member, options config.CheckConfig, resultsCollectorChannel
 				hasEnoughPeers, isSyncing, err := checkPeers(c)
 				if err != nil {
 					errMsg := fmt.Sprintf("Peers check failed for (Member: %s URL: '%s' Error: %v)", member.MemberName, endpoint, err)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
 				if !hasEnoughPeers || isSyncing {
 					errMsg := fmt.Sprintf("Endpoint has insufficient peers or is syncing (Member: %s URL: '%s')", member.MemberName, endpoint)
-					sendResult("wss", member.MemberName, hostname, "endpoint", false, errMsg, resultsCollectorChannel)
+					sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", false, errMsg, resultsCollectorChannel)
 					log.Println(errMsg)
 					return
 				}
 
-				sendResult("wss", member.MemberName, hostname, "endpoint", true, "", resultsCollectorChannel)
+				sendResult("wss", member.MemberName, hostname+u.Path, "endpoint", true, "", resultsCollectorChannel)
 			}(service, endpoint)
 		}
 	}

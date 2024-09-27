@@ -32,7 +32,7 @@ func (r *IbpMonitor) performCheck(checkName string) {
 	for _, member := range r.Members {
 		if check, exists := checks[checkName]; exists {
 			go CheckWrapper(checkName, check, member, r.Config.Checks[checkName], r.ResultsCollectorChannel)
-			time.Sleep(100 * time.Microsecond)
+			time.Sleep(1 * time.Millisecond)
 		}
 	}
 }
