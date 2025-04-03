@@ -1,0 +1,84 @@
+---
+# Ansible playbook to enable or disable a member on multiple servers
+# Equivalent to override.sh bash script
+#
+# Usage:
+#   DNS_AUTH_KEY=your_auth_key_here ansible-playbook memberOverride.yml -e "action_param=enable|disable"
+
+- name: Manage Member Status
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars:
+    # Get auth_key from environment variable DNS_AUTH_KEY
+    auth_key: "{{ lookup('env', 'DNS_AUTH_KEY') }}"
+    # Member name must match member name (stored in key) here: https://github.com/ibp-network/config/blob/main/members_professional.json
+    details: "Membername"
+    servers:
+      - "http://dns-01.dotters.network:8080/api"
+      - "http://dns-02.dotters.network:8080/api"
+      - "http://dns-03.dotters.network:8080/api"
+    # Default to 'enable' if not specified
+    member_action: "{{ action_param | default('enable') }}"
+
+  tasks:
+    - name: Check if DNS_AUTH_KEY environment variable is set
+      ansible.builtin.fail:
+        msg: "DNS_AUTH_KEY environment variable is not set. Please set it before running this playbook."
+      when: auth_key | length == 0
+
+    - name: Validate action parameter
+      ansible.builtin.fail:
+        msg: "Invalid action: {{ member_action }}. Use 'enable' or 'disable'."
+      when: member_action != 'enable' and member_action != 'disable'
+
+    - name: Set method based on action
+      ansible.builtin.set_fact:
+        method: "{{ 'enableMember' if member_action == 'enable' else 'disableMember' }}"
+
+    - name: Send request to each server
+      ansible.builtin.uri:
+        url: "{{ item }}"
+        method: POST
+        body_format: json
+        body:
+          method: "{{ method }}"
+          details: "{{ details }}"
+          authkey: "{{ auth_key }}"
+        headers:
+          Content-Type: "application/json"
+        status_code: 200
+        return_content: true
+      register: response
+      loop: "{{ servers }}"
+
+    - name: Display results
+      ansible.builtin.debug:
+        msg: >-
+          {% if (item.content | from_json).result == 1 %}
+          SUCCESS
+          {% else %}
+          FAILED - Response: {{ item.content }}
+          {% endif %}
+      loop: "{{ response.results }}"
+      loop_control:
+        label: "{{ member_action | upper }} operation on {{ details }}"
+
+    - name: Set success flag
+      ansible.builtin.set_fact:
+        all_successful: true
+        failed_servers: []
+
+    - name: Check for failed requests
+      ansible.builtin.set_fact:
+        all_successful: false
+        failed_servers: "{{ failed_servers + [item.item] }}"
+      loop: "{{ response.results }}"
+      loop_control:
+        label: "{{ member_action | upper }} operation on {{ details }}"
+      when: (item.content | from_json).result != 1
+
+    - name: Fail if any request was unsuccessful
+      ansible.builtin.fail:
+        msg: "One or more API requests failed. Failed servers: {{ failed_servers | join(', ') }}"
+      when: not all_successful
